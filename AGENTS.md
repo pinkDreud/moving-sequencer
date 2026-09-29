@@ -50,6 +50,9 @@ Never skip step 2. Bugs get a failing regression test before the fix.
 - **Immutability**: ops return new objects and never mutate inputs (tests assert this).
   Unchanged subtrees may be shared by reference.
 - **Dependency direction**: `ui → state → core/audio/storage`; `audio → core`; `core → nothing`.
+- **App state** (`src/state.svelte.ts`, class `AppState`): immutable values in `$state.raw`, replaced on change and
+  never mutated in place. Edits go through `app.updateTrack(t => op(t, …))` with the pure ops.
+  The lint rule `svelte/prefer-svelte-reactivity` is off for this reason.
 - **Svelte 5 runes** (`$state`, `$derived`, `$effect`, `$props`); no legacy `export let` or stores.
 - Components stay thin: logic goes to `core/` or `state.svelte.ts` where it can be unit-tested.
 - **Input**: pointer events only (`pointerdown/move/up/cancel`), never HTML5 drag-and-drop (broken on mobile).
