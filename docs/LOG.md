@@ -4,8 +4,9 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Current state
 
-- **Phase:** v1 complete. Features 00–11 are done and merged (570 unit, 134 e2e tests).
-- **Next step:** real-device checks by the user (listed below), then decide what's next: deployment (a public repo
+- **Phase:** v1 plus user feedback round 1. Features 00–12 are done (594 unit, 150 e2e tests), and issue #1 is fixed and closed.
+- **Next step:** 13 swing ∥ 14 preparation area (specs are written; worktree agents on `feat/13-swing` and
+  `feat/14-prep-area`).
   for Pages, or Cloudflare/Netlify), multi-track, undo/redo, lasso selection, export/import.
 - **Real-device checks pending:** how the kit sounds; iOS long-press drag; mic recording over `npm run dev:https`
   (trim/normalize, speaker vs earpiece after recording on iOS); autosave surviving tab close on iOS; private mode.
@@ -24,6 +25,12 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-29 — feedback round: 12 tempo ½×/2×, specs 13 swing and 14 prep area
+
+- The user asked for half/double tempo, swing, and a preparation area to drag figures from. Feasibility was assessed
+  first and all three are doable. The decisions are in PLAN §1 and the specs `docs/features/12..14-*.md`.
+- 12 is done: `Song.tempoFactor`, `secondsPerSlot(bpm, slotValue, factor)`, and the Speed control.
 
 ### 2026-09-29 — issue #1: palette tap replaces the selected sound
 

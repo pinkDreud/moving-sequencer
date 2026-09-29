@@ -4,7 +4,7 @@ A small step sequencer for the browser (desktop and phone). Every sound is a squ
 subdivision. Rearrange squares with drag and drop **while the pattern plays**. Group squares to squeeze them into one
 slot (triplets, quintuplets, …) and ungroup them to spread them back out.
 
-**Play**: Play/Stop (or Space), BPM, and what one slot is worth (1/4, 1/8, 1/16).
+**Play**: Play/Stop (or Space), BPM, speed (½× / 1× / 2×, BPM unchanged), and what one slot is worth (1/4, 1/8, 1/16).
 
 **Editing**: tap a sound in the palette to add a square at the end, or, with squares selected, to give them that
 sound. Click a square to
