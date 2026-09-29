@@ -42,7 +42,7 @@ describe('shortcutFor', () => {
       expect(shortcutFor(key('Backspace', { target: el }))).toBeNull();
     }
     const editable = document.createElement('div');
-    editable.contentEditable = 'true';
+    editable.setAttribute('contenteditable', 'true'); // jsdom does not reflect the property
     expect(shortcutFor(key('m', { target: editable }))).toBeNull();
   });
 
