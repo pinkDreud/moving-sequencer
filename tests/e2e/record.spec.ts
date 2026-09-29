@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { storedKeys, storedSong } from './storage';
 
 const palette = (page: Page) => page.getByRole('group', { name: 'Sounds' });
 const paletteButton = (page: Page, name: string) => palette(page).getByRole('button', { name, exact: true });
@@ -74,6 +75,43 @@ test.describe('with the fake microphone', () => {
     const [loaded] = await loadedRecordings(page);
     expect(loaded?.duration).toBeGreaterThan(2.5); // ran to the 4 s limit, minus at most 1 s of trimmed silence
     await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeVisible(); // still playing
+  });
+
+  test('a recording and the squares using it survive a reload; a deleted one is gone after a reload', async ({
+    page,
+  }) => {
+    await page.goto('./?fake-audio');
+    await paletteButton(page, 'Record').click();
+    await expect(page.getByRole('button', { name: 'Stop recording' })).toContainText(/[1-3]\.\d s/, {
+      timeout: 5_000,
+    });
+    await page.getByRole('button', { name: 'Stop recording' }).click();
+    await paletteButton(page, 'Rec 1').click();
+    await expect(slots(page)).toHaveCount(9);
+    const [recorded] = await loadedRecordings(page);
+    const id = recorded?.id ?? 'missing';
+    await expect.poll(() => storedKeys(page), { timeout: 5_000 }).toContain(`recording:${id}`);
+    await expect.poll(async () => JSON.stringify(await storedSong(page)), { timeout: 5_000 }).toContain(id);
+
+    await page.reload();
+    await expect(paletteButton(page, 'Rec 1')).toBeVisible();
+    await expect(slots(page).nth(8)).toHaveAttribute('aria-label', 'Rec 1');
+    const [restored] = await loadedRecordings(page);
+    expect(restored?.id).toBe(id);
+    expect(restored?.peak).toBeCloseTo(0.891, 2);
+
+    await paletteButton(page, 'Delete Rec 1').click();
+    await paletteButton(page, 'Confirm delete Rec 1').click();
+    await expect(slots(page).nth(8)).toHaveAttribute('aria-label', 'silent');
+    await expect.poll(() => storedKeys(page), { timeout: 5_000 }).not.toContain(`recording:${id}`);
+    await expect
+      .poll(async () => JSON.stringify(await storedSong(page)), { timeout: 5_000 })
+      .not.toContain(id);
+
+    await page.reload();
+    await expect(slots(page)).toHaveCount(9);
+    await expect(slots(page).nth(8)).toHaveAttribute('aria-label', 'silent');
+    await expect(paletteButton(page, 'Rec 1')).toHaveCount(0);
   });
 });
 

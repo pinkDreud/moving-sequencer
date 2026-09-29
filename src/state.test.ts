@@ -1,8 +1,9 @@
+import { flushSync } from 'svelte';
 import { describe, expect, it } from 'vitest';
 import { KIT } from './audio/sounds';
 import { createIdGen, group, square, type Song, type Sound } from './core/model';
 import { remove, setSound } from './core/ops';
-import { AppState, defaultSong } from './state.svelte';
+import { AppState, defaultSong, watchSong } from './state.svelte';
 
 const song = (): Song => ({
   version: 1,
@@ -84,6 +85,22 @@ describe('AppState', () => {
     expect(state.song.bpm).toBe(122);
   });
 
+  it('keeps the song object when bpm or slot value do not change', () => {
+    const state = new AppState({ song: song(), nextId: createIdGen('n') });
+    const before = state.song;
+    state.setBpm(100);
+    state.setBpm(100.2); // rounds to the current value
+    state.setSlotValue(8);
+    expect(state.song).toBe(before);
+  });
+
+  it('starts with the given sounds (kit plus restored recordings)', () => {
+    const rec: Sound = { id: 'rec-a', name: 'Rec 1', color: '#fff', source: 'recording' };
+    const state = new AppState({ song: song(), nextId: createIdGen('n'), sounds: [...KIT, rec] });
+    expect(state.soundById('rec-a')).toBe(rec);
+    expect(new AppState({ song: song(), nextId: createIdGen('n') }).sounds).toBe(KIT);
+  });
+
   it('sets the slot value', () => {
     const state = new AppState({ song: song(), nextId: createIdGen('n') });
     state.setSlotValue(16);
@@ -150,5 +167,27 @@ describe('AppState', () => {
       expect(state.song).toBe(songBefore);
       expect(state.sounds).toBe(soundsBefore);
     });
+  });
+});
+
+describe('watchSong', () => {
+  it('reports the current song, then every new song object, until stopped', () => {
+    const state = new AppState({ song: song(), nextId: createIdGen('n') });
+    const seen: Song[] = [];
+    const stop = watchSong(state, (s) => seen.push(s));
+    flushSync();
+    expect(seen).toEqual([state.song]);
+    state.setBpm(140);
+    flushSync();
+    expect(seen).toHaveLength(2);
+    expect(seen[1]).toBe(state.song);
+    state.clearSelection();
+    state.select(['a']);
+    flushSync();
+    expect(seen).toHaveLength(2); // selection is not part of the song
+    stop();
+    state.setBpm(150);
+    flushSync();
+    expect(seen).toHaveLength(2);
   });
 });
