@@ -4,9 +4,10 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Current state
 
-- **Phase:** 00–08 done (389 unit, 93 e2e tests). The core experience works: live drag & drop while playing, on
-  mouse, pen and touch.
-- **Next step:** 09 mic recording ∥ 10 autosave (specs to write), then 11 PWA. The user should listen to the kit on
+- **Phase:** 00–08 and 11 done (389 unit, 99 e2e tests). 09 mic recording → 10 autosave are running in one
+  worktree agent (`feat/09-mic-recording`, then `feat/10-autosave` branched from it).
+- **Next step:** review and merge 09 and 10. v1 is then complete; next come a real-device check (sound, iOS touch,
+  mic over `dev:https`) and a decision about deployment/multi-track.
   a real device and try touch drag on iOS.
 - **Blockers:** none. No deployment: Pages is unavailable for a private repo on the free plan, and the user chose "no deploy for now".
 
@@ -21,6 +22,11 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-29 — 11 PWA
+
+- `vite-plugin-pwa`: manifest, auto-updating service worker (production only), and icons generated from
+  `public/icons/icon.svg` by `scripts/make-icons.mjs`. The offline reload is e2e-tested on Chromium.
 
 ### 2026-09-29 — 08 drag & drop
 

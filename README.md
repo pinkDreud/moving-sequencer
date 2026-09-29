@@ -16,6 +16,9 @@ shows where it lands, which can be between squares, inside a group, or out of a 
 moves the whole selection, and a group moves as one block. Drop it well outside the pattern to delete it. Escape
 cancels. It all works while playing, and the change is heard on the next subdivision.
 
+**Install**: it's a PWA. Add it to the home screen (phone) or install it (desktop Chrome/Edge), and it works offline
+after the first visit. This needs HTTPS or localhost.
+
 No public deployment yet. To try it on a phone, run the dev server on your LAN (see below).
 
 ## Development
