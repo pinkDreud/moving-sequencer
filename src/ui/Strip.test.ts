@@ -147,14 +147,30 @@ describe('Strip selection', () => {
     expect(byId('a')).toHaveClass('selected');
   });
 
-  it('shift, cmd or ctrl click toggles the node', () => {
+  it('cmd or ctrl click toggles the node', () => {
     const { app, byId } = renderStrip(['a']);
-    fireEvent.click(byId('b'), { shiftKey: true });
+    fireEvent.click(byId('b'), { ctrlKey: true });
     expect(selected(app)).toEqual(['a', 'b']);
     fireEvent.click(byId('c'), { metaKey: true });
     expect(selected(app)).toEqual(['a', 'b', 'c']);
     fireEvent.click(byId('a'), { ctrlKey: true });
     expect(selected(app)).toEqual(['b', 'c']);
+  });
+
+  it('shift click selects everything from the last clicked node to this one', () => {
+    const { app, byId } = renderStrip([]);
+    fireEvent.click(byId('a'));
+    fireEvent.click(byId('c'), { shiftKey: true });
+    expect(selected(app)).toEqual(['a', 'b', 'c']);
+    // The anchor stays: shift-clicking again re-spans from it.
+    fireEvent.click(byId('b'), { shiftKey: true });
+    expect(selected(app)).toEqual(['a', 'b']);
+  });
+
+  it('shift click with no previous click selects just the node', () => {
+    const { app, byId } = renderStrip([]);
+    fireEvent.click(byId('b'), { shiftKey: true });
+    expect(selected(app)).toEqual(['b']);
   });
 
   it('a touch tap toggles the node', () => {

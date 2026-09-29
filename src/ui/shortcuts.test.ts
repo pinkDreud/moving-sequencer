@@ -13,9 +13,17 @@ const key = (k: string, extra: Partial<KeyLike> = {}): KeyLike => ({
 });
 
 describe('shortcutFor', () => {
-  it('maps Delete and Backspace to delete', () => {
-    expect(shortcutFor(key('Delete'))).toBe('delete');
-    expect(shortcutFor(key('Backspace'))).toBe('delete');
+  it('maps Delete and Backspace to empty, and with Shift to remove', () => {
+    expect(shortcutFor(key('Delete'))).toBe('empty');
+    expect(shortcutFor(key('Backspace'))).toBe('empty');
+    expect(shortcutFor(key('Delete', { shiftKey: true }))).toBe('remove');
+    expect(shortcutFor(key('Backspace', { shiftKey: true }))).toBe('remove');
+  });
+
+  it('maps Insert and I to insert', () => {
+    expect(shortcutFor(key('Insert'))).toBe('insert');
+    expect(shortcutFor(key('i'))).toBe('insert');
+    expect(shortcutFor(key('I'))).toBe('insert');
   });
 
   it('maps M to mute, G to group, Shift+G to ungroup, Escape to clear', () => {
@@ -52,6 +60,6 @@ describe('shortcutFor', () => {
   });
 
   it('works when focus is on a button', () => {
-    expect(shortcutFor(key('Delete', { target: document.createElement('button') }))).toBe('delete');
+    expect(shortcutFor(key('Delete', { target: document.createElement('button') }))).toBe('empty');
   });
 });

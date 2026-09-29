@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { square } from '../core/model';
 import { parseTrack, shape } from '../core/test-helpers';
-import { allMuted, canGroup, selectMode, selectedGroupIds, ungroupAll } from './selection';
+import { allMuted, canGroup, rangeIds, selectMode, selectedGroupIds, ungroupAll } from './selection';
 
 const pointer = (
   pointerType: string,
@@ -20,8 +20,12 @@ describe('selectMode', () => {
     expect(selectMode(pointer(''))).toBe('replace');
   });
 
-  it('toggles with shift, cmd or ctrl held', () => {
-    expect(selectMode(pointer('mouse', { shiftKey: true }))).toBe('toggle');
+  it('selects a range with shift held', () => {
+    expect(selectMode(pointer('mouse', { shiftKey: true }))).toBe('range');
+    expect(selectMode(pointer('', { shiftKey: true }))).toBe('range');
+  });
+
+  it('toggles with cmd or ctrl held', () => {
     expect(selectMode(pointer('mouse', { metaKey: true }))).toBe('toggle');
     expect(selectMode(pointer('mouse', { ctrlKey: true }))).toBe('toggle');
   });
@@ -100,5 +104,33 @@ describe('allMuted', () => {
       nodes: [{ kind: 'group' as const, id: 'g', span: 1 as const, children: track.nodes }],
     };
     expect(allMuted(nested, new Set(['g']))).toBe(false);
+  });
+});
+
+describe('rangeIds (shift+click)', () => {
+  const range = (spec: string, anchor: string, target: string) =>
+    rangeIds(parseTrack(spec), anchor, target).join(' ');
+
+  it('selects the siblings between anchor and target, in either direction', () => {
+    expect(range('A B C D E', 'B', 'D')).toBe('B C D');
+    expect(range('A B C D E', 'D', 'B')).toBe('B C D');
+  });
+
+  it('keeps a group between them as one block', () => {
+    expect(range('A G[B C] D', 'A', 'D')).toBe('A G D');
+  });
+
+  it('works inside a group', () => {
+    expect(range('A G[B C D] E', 'B', 'D')).toBe('B C D');
+  });
+
+  it('across levels selects every square in between, in time order', () => {
+    expect(range('A G[B C] D', 'C', 'D')).toBe('C D');
+    expect(range('A G[B C] D', 'A', 'C')).toBe('A B C');
+    expect(range('A G[B C] H[D E]', 'B', 'H')).toBe('B C D E');
+  });
+
+  it('selects only the target when the anchor is gone', () => {
+    expect(range('A B C', 'zz', 'B')).toBe('B');
   });
 });

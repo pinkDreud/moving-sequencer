@@ -68,8 +68,8 @@ test('drags a square to a new position', async ({ page }) => {
 test('drags three selected squares after the last one', async ({ page }) => {
   await load(page, [sq('kick'), sq('snare'), sq('clap'), sq('rim')]);
   await node(page, 'kick').click();
-  await node(page, 'snare').click({ modifiers: ['Shift'] });
-  await node(page, 'clap').click({ modifiers: ['Shift'] });
+  await node(page, 'snare').click({ modifiers: ['ControlOrMeta'] });
+  await node(page, 'clap').click({ modifiers: ['ControlOrMeta'] });
   await drag(page, node(page, 'snare'), await at(node(page, 'rim'), 0.8));
   await expect.poll(() => shape(page)).toBe('rim kick snare clap');
 });
@@ -111,7 +111,7 @@ test('dropping a square onto the middle of another square groups them', async ({
 test('Group with a group and a square outside it adds the square to that group', async ({ page }) => {
   await load(page, [sq('kick'), grp('g', sq('snare'), sq('clap')), sq('rim')]);
   await node(page, 'snare').click();
-  await node(page, 'rim').click({ modifiers: ['Shift'] });
+  await node(page, 'rim').click({ modifiers: ['ControlOrMeta'] });
   await page.keyboard.press('g');
   await expect.poll(() => shape(page)).toBe('kick g[snare clap rim]');
 });

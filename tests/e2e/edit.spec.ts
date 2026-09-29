@@ -20,7 +20,7 @@ test('adds squares from the palette, groups three, ungroups them and deletes the
   // Mouse: first click selects, shift-click adds. Touch: every tap toggles.
   const pick = async (target: Locator, first: boolean) => {
     if (isMobile) await target.tap();
-    else await target.click(first ? {} : { modifiers: ['Shift'] });
+    else await target.click(first ? {} : { modifiers: ['ControlOrMeta'] });
   };
 
   await page.goto('./');
@@ -50,7 +50,7 @@ test('adds squares from the palette, groups three, ungroups them and deletes the
   await expect(slots(page)).toHaveCount(11);
   await expect(page.getByRole('toolbar', { name: 'Selection' })).toContainText('3 selected');
 
-  await barButton(page, 'Delete').click();
+  await barButton(page, 'Remove').click();
   await expect(slots(page)).toHaveCount(8);
   await expect(page.getByRole('toolbar', { name: 'Selection' })).toHaveCount(0);
 });
@@ -59,7 +59,7 @@ test('all slots have the same width, and a group splits its slot evenly', async 
   await page.goto('./');
   for (const [i, target] of [slots(page).nth(0), slots(page).nth(1), slots(page).nth(2)].entries()) {
     if (isMobile) await target.tap();
-    else await target.click(i === 0 ? {} : { modifiers: ['Shift'] });
+    else await target.click(i === 0 ? {} : { modifiers: ['ControlOrMeta'] });
   }
   await barButton(page, 'Group').click();
   await expect(slots(page)).toHaveCount(6);
@@ -115,4 +115,28 @@ test('issue #1: click a square, then a sample: the sound goes into that square',
   await expect(slots(page)).toHaveCount(9);
   await expect(slots(page).nth(3)).toHaveAttribute('aria-label', 'Rim');
   await expect(slots(page).nth(4)).not.toHaveAttribute('aria-label', 'Rim');
+});
+
+test('shift+click selects a range; Delete empties it; Ins adds an empty slot before', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Keyboard and shift+click need a desktop');
+  await page.goto('./');
+  await slots(page).nth(1).click();
+  await slots(page)
+    .nth(4)
+    .click({ modifiers: ['Shift'] });
+  await expect(page.getByRole('toolbar', { name: 'Selection' })).toContainText('4 selected');
+
+  await page.keyboard.press('Delete');
+  await expect(slots(page)).toHaveCount(8);
+  for (const i of [1, 2, 3, 4]) await expect(slots(page).nth(i)).toHaveAttribute('aria-label', 'silent');
+  await expect(page.getByRole('toolbar', { name: 'Selection' })).toContainText('4 selected');
+
+  await slots(page).nth(6).click();
+  await page.keyboard.press('Insert');
+  await expect(slots(page)).toHaveCount(9);
+  await expect(slots(page).nth(6)).toHaveAttribute('aria-label', 'silent');
+  await expect(slots(page).nth(7)).toHaveAttribute('aria-pressed', 'true');
 });

@@ -53,12 +53,21 @@ describe('SelectionBar', () => {
     expect([...app.selection].sort()).toEqual(['B', 'C']);
   });
 
-  it('Delete removes the selection', () => {
+  it('Remove removes the selection', () => {
     const app = makeApp('A B C', ['A', 'C']);
     render(SelectionBar, { app });
-    fireEvent.click(button('Delete'));
+    fireEvent.click(button('Remove'));
     expect(shape(app.track)).toBe('B');
     expect(bar()).toBeNull();
+  });
+
+  it('Empty turns the selected squares into empty slots and keeps the selection', () => {
+    const app = makeApp('A B C', ['A', 'C']);
+    render(SelectionBar, { app });
+    fireEvent.click(button('Empty'));
+    expect(shape(app.track)).toBe('A B C');
+    expect(findNode(app.track, 'A')).toMatchObject({ soundId: null });
+    expect(app.selection.size).toBe(2);
   });
 
   it('Clear empties the selection without editing', () => {
@@ -86,7 +95,7 @@ describe('SelectionBar', () => {
     fireEvent.click(button('Mute'));
     expect(findNode(app.prep, 'P')).toMatchObject({ muted: true });
     expect(button('Unmute')).toBeInTheDocument();
-    fireEvent.click(button('Delete'));
+    fireEvent.click(button('Remove'));
     expect(shape(app.prep)).toBe('R');
   });
 
