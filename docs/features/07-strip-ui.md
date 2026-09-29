@@ -40,7 +40,7 @@ playhead lights up.
 - **Group selection**: a group has a frame (a `<button>` behind its children, visible as a few px of padding).
   Tapping the frame selects the group; tapping a child selects the child. No nested interactive elements.
 - **Pointer type**: the strip records `pointerType` on `pointerdown`; the following `click` uses it
-  (`touch` → toggle). Keyboard activation (Enter/Space on a focused square) behaves like a mouse click.
+  (`touch` or `pen` → toggle, since there are no modifier keys). Keyboard activation (Enter/Space on a focused square) behaves like a mouse click.
 - **DOM contract for 08**: every node's outer element carries `data-node-id`; top-level slots are the direct
   children of the strip (`section.strip`, `aria-label="Pattern"`); a group's children are inside its
   `.children` element. The slot size is the CSS variable `--slot-size` (56 px, 44 px on narrow screens).

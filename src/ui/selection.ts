@@ -11,9 +11,10 @@ export interface PointerLike {
   ctrlKey: boolean;
 }
 
-/** Mouse/pen/keyboard click replaces the selection; a modifier or a touch tap toggles (no modifiers on phones). */
+/** Mouse/keyboard click replaces the selection; a modifier, or a touch/pen tap (no modifier keys there), toggles. */
 export function selectMode(e: PointerLike): SelectMode {
-  return e.pointerType === 'touch' || e.shiftKey || e.metaKey || e.ctrlKey ? 'toggle' : 'replace';
+  const tap = e.pointerType === 'touch' || e.pointerType === 'pen';
+  return tap || e.shiftKey || e.metaKey || e.ctrlKey ? 'toggle' : 'replace';
 }
 
 /** Where a palette square goes: after the last selected node in document order, else at the end of the root. */
