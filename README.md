@@ -4,10 +4,17 @@ A small step sequencer for the browser (desktop and phone). Every sound is a squ
 subdivision. Rearrange squares with drag and drop **while the pattern plays**. Group squares to squeeze them into one
 slot (triplets, quintuplets, …) and ungroup them to spread them back out.
 
+**Play**: Play/Stop (or Space), BPM, and what one slot is worth (1/4, 1/8, 1/16).
+
 **Editing**: tap a sound in the palette to add a square (after the selection, or at the end). Click a square to
 select it; Shift/Cmd/Ctrl-click adds to the selection (on a phone every tap toggles). The selection bar mutes,
 changes the sound, groups, ungroups or deletes. Keys: Delete/Backspace, M (mute), G (group), Shift+G (ungroup),
 Escape (clear selection).
+
+**Moving**: drag a square with the mouse, or long-press it on a phone and then move your finger. The yellow line
+shows where it lands, which can be between squares, inside a group, or out of a group. Dragging a selected square
+moves the whole selection, and a group moves as one block. Drop it well outside the pattern to delete it. Escape
+cancels. It all works while playing, and the change is heard on the next subdivision.
 
 No public deployment yet. To try it on a phone, run the dev server on your LAN (see below).
 

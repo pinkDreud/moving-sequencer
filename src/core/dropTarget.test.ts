@@ -156,3 +156,23 @@ describe('dropTarget delete zone', () => {
     expect(dropTarget({ x: 300, y: 215 }, items, strip, { deleteMargin: 10 })).toEqual({ kind: 'delete' });
   });
 });
+
+describe('dropTarget with clipped group children', () => {
+  // G (0..50) clips its children; the last child overflows to 50..62, over the next slot N (60..110).
+  const items: LayoutItem[] = [
+    { id: 'G', parentId: null, index: 0, kind: 'group', depth: 0, rect: rect(0, 0, 50, 50) },
+    { id: 'a', parentId: 'G', index: 0, kind: 'square', depth: 1, rect: rect(2, 2, 25, 46) },
+    { id: 'b', parentId: 'G', index: 1, kind: 'square', depth: 1, rect: rect(27, 2, 35, 46) },
+    { id: 'N', parentId: null, index: 1, kind: 'square', depth: 0, rect: rect(60, 0, 50, 50) },
+  ];
+
+  it('a child only counts where it is visible inside its parent', () => {
+    expect(dropTarget({ x: 61, y: 25 }, items, strip)).toMatchObject({
+      target: { parentId: null, index: 1 },
+    });
+  });
+
+  it('still counts where it is visible', () => {
+    expect(dropTarget({ x: 40, y: 25 }, items, strip)).toMatchObject({ target: { parentId: 'G', index: 1 } });
+  });
+});

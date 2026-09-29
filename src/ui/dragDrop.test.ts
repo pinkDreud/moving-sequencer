@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Drop } from '../core/dropTarget';
-import { shape } from '../core/test-helpers';
+import { parseTrack, shape } from '../core/test-helpers';
 import { applyDrop, dragIds, readLayout } from './dragDrop';
 import { makeApp } from './test-helpers';
 
@@ -55,12 +55,19 @@ describe('readLayout', () => {
 });
 
 describe('dragIds', () => {
+  const track = parseTrack('A G[B H[C D]] E');
+
   it('dragging a selected node drags the whole selection', () => {
-    expect(dragIds(new Set(['A', 'C']), 'C').sort()).toEqual(['A', 'C']);
+    expect(dragIds(track, new Set(['A', 'C']), 'C').sort()).toEqual(['A', 'C']);
   });
 
   it('dragging an unselected node drags only it', () => {
-    expect(dragIds(new Set(['A', 'C']), 'B')).toEqual(['B']);
+    expect(dragIds(track, new Set(['A', 'C']), 'B')).toEqual(['B']);
+  });
+
+  it('pressing inside a selected group drags the selection (groups are hard to grab by their frame on touch)', () => {
+    expect(dragIds(track, new Set(['G']), 'C')).toEqual(['G']);
+    expect(dragIds(track, new Set(['H', 'E']), 'D').sort()).toEqual(['E', 'H']);
   });
 });
 

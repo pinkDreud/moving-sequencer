@@ -116,6 +116,35 @@ test('Escape aborts a drag', async ({ page }) => {
   await expect.poll(() => shape(page)).toBe('kick snare clap');
 });
 
+test('Escape keeps the selection, and the release after it does not change it', async ({ page }) => {
+  await load(page, [sq('kick'), sq('snare'), sq('clap')]);
+  await node(page, 'kick').click();
+  await drag(page, node(page, 'kick'), await at(node(page, 'clap'), 0.8), () =>
+    page.keyboard.press('Escape'),
+  );
+  await expect(node(page, 'kick')).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('after a drop released outside the strip, the next click still works', async ({ page }) => {
+  await load(page, [sq('kick'), sq('snare'), sq('clap')]);
+  const box = await strip(page).boundingBox();
+  if (!box) throw new Error('no strip');
+  // Just below the strip: a move (within the delete margin), released outside the strip element.
+  await drag(page, node(page, 'kick'), { x: box.x + box.width - 5, y: box.y + box.height + 15 });
+  await expect(node(page, 'kick')).toHaveAttribute('aria-pressed', 'true');
+  await page.mouse.click(box.x + box.width - 5, box.y + box.height - 3);
+  await expect(node(page, 'kick')).toHaveAttribute('aria-pressed', 'false');
+});
+
+test('shows a delete state when the drop would delete', async ({ page }) => {
+  await load(page, [sq('kick'), sq('snare')]);
+  const box = await strip(page).boundingBox();
+  if (!box) throw new Error('no strip');
+  await drag(page, node(page, 'kick'), { x: box.x + 30, y: box.y + box.height + 120 }, async () => {
+    await expect(page.getByText('Release to delete')).toBeVisible();
+  });
+});
+
 test('shows an insertion line while dragging and removes it after', async ({ page }) => {
   await load(page, [sq('kick'), sq('snare'), sq('clap')]);
   await drag(page, node(page, 'kick'), await at(node(page, 'clap'), 0.8), async () => {

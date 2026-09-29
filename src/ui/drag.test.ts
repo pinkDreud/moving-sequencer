@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createGesture, type PointerLike } from './drag';
 
-const at = (x: number, y: number, pointerType = 'mouse', pointerId = 1): PointerLike => ({
+const at = (x: number, y: number, pointerType = 'mouse', pointerId = 1, buttons = 1): PointerLike => ({
   pointerId,
   pointerType,
   clientX: x,
   clientY: y,
+  buttons,
 });
 
 function setup() {
@@ -134,12 +135,76 @@ describe('cancel', () => {
     expect(calls).toEqual([]);
   });
 
-  it('a new down while dragging cancels the previous drag first', () => {
+  it('a new down from the same pointer (lost pointerup) cancels the stale drag first', () => {
     const { gesture, calls } = setup();
     gesture.down(at(0, 0), 'A');
     gesture.move(at(10, 0));
     gesture.down(at(0, 0), 'B');
     expect(calls).toEqual(['start A 10,0', 'move 10,0', 'cancel']);
     expect(gesture.dragging).toBe(false);
+  });
+
+  it("another pointer's down or cancel does not disturb the active drag", () => {
+    const { gesture, calls } = setup();
+    gesture.down(at(0, 0, 'touch', 1), 'A');
+    vi.advanceTimersByTime(300);
+    gesture.down(at(50, 50, 'touch', 2), 'B');
+    gesture.cancel({ pointerId: 2 });
+    expect(gesture.dragging).toBe(true);
+    gesture.cancel({ pointerId: 1 });
+    expect(gesture.dragging).toBe(false);
+    expect(calls).toEqual(['start A 0,0', 'cancel']);
+  });
+
+  it('a mouse move with no button held ends a stuck drag (the pointerup was lost)', () => {
+    const { gesture, calls } = setup();
+    gesture.down(at(0, 0), 'A');
+    gesture.move(at(10, 0));
+    gesture.move(at(20, 0, 'mouse', 1, 0));
+    gesture.up(at(200, 0));
+    expect(calls).toEqual(['start A 10,0', 'move 10,0', 'cancel']);
+  });
+});
+
+describe('click swallowing', () => {
+  const dragAndDrop = (gesture: ReturnType<typeof setup>['gesture']) => {
+    gesture.down(at(0, 0), 'A');
+    gesture.move(at(10, 0));
+    gesture.up(at(10, 0));
+  };
+
+  it('only lasts for the click dispatched right after the pointerup (no leak to a later click)', () => {
+    const { gesture } = setup();
+    dragAndDrop(gesture);
+    vi.advanceTimersByTime(0);
+    expect(gesture.consumeClick()).toBe(false);
+  });
+
+  it('never swallows a keyboard click', () => {
+    const { gesture } = setup();
+    dragAndDrop(gesture);
+    expect(gesture.consumeClick(true)).toBe(false);
+  });
+
+  it('after Escape aborts a drag, the click of the release is swallowed', () => {
+    const { gesture, calls } = setup();
+    gesture.down(at(0, 0), 'A');
+    gesture.move(at(10, 0));
+    gesture.cancel();
+    expect(gesture.consumeClick()).toBe(false);
+    gesture.move(at(30, 0));
+    gesture.up(at(30, 0));
+    expect(gesture.consumeClick()).toBe(true);
+    expect(calls).toEqual(['start A 10,0', 'move 10,0', 'cancel']);
+  });
+
+  it('a plain click after an aborted drag that never released is not swallowed', () => {
+    const { gesture } = setup();
+    gesture.down(at(0, 0), 'A');
+    gesture.move(at(10, 0));
+    gesture.cancel();
+    gesture.down(at(0, 0), 'B');
+    gesture.up(at(0, 0));
+    expect(gesture.consumeClick()).toBe(false);
   });
 });
