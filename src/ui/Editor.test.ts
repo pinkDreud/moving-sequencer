@@ -146,6 +146,9 @@ describe('Editor', () => {
     fireEvent.keyDown(window, { key: 'g' });
     expect(shape(app.prep)).toBe('n1[P Q] R');
     fireEvent.keyDown(window, { key: 'Delete' });
+    expect(shape(app.prep)).toBe('n1[P Q] R');
+    expect(findNode(app.prep, 'P')).toMatchObject({ soundId: null });
+    fireEvent.keyDown(window, { key: 'Delete', shiftKey: true });
     expect(shape(app.prep)).toBe('R');
   });
 

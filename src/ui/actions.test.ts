@@ -222,8 +222,12 @@ describe('runShortcut', () => {
     expect(shape(app.track)).toBe('n1[A B] C');
     runShortcut(app, 'ungroup');
     expect(shape(app.track)).toBe('A B C');
-    runShortcut(app, 'delete');
-    expect(shape(app.track)).toBe('C');
+    runShortcut(app, 'empty');
+    expect(findNode(app.track, 'A')).toMatchObject({ soundId: null });
+    runShortcut(app, 'insert');
+    expect(shape(app.track)).toBe('n2 A B C');
+    runShortcut(app, 'remove');
+    expect(shape(app.track)).toBe('n2 C');
     app.select(['C']);
     runShortcut(app, 'clear');
     expect(app.selection.size).toBe(0);

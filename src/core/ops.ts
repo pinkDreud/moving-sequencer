@@ -154,6 +154,13 @@ export function clearSound(track: Track, soundId: SoundId): Track {
   );
 }
 
+/** Turns the targeted squares into empty slots (silent, unmuted); a group id targets all squares below it. */
+export function emptySquares(track: Track, ids: readonly NodeId[]): Track {
+  return updateSquares(track, targetedSquares(track, ids), (s) =>
+    s.soundId === null && !s.muted ? s : { ...s, soundId: null, muted: false },
+  );
+}
+
 /** Unmutes the targeted squares if all are muted, else mutes them all (a group id targets its squares). */
 export function toggleMute(track: Track, ids: readonly NodeId[]): Track {
   const targets = targetedSquares(track, ids);
