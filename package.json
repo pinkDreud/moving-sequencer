@@ -2,6 +2,8 @@
   "name": "moving-sequencer",
   "private": true,
   "version": "0.0.0",
+  "license": "MIT",
+  "author": "Matteo Magherini <matteo.magherini@gmail.com>",
   "type": "module",
   "scripts": {
     "dev": "vite",

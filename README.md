@@ -39,3 +39,15 @@ npm run test:e2e   # Playwright (first time: npx playwright install chromium web
 
 Contributing (humans and LLMs): read [`AGENTS.md`](AGENTS.md), then [`docs/LOG.md`](docs/LOG.md) and
 [`docs/PLAN.md`](docs/PLAN.md).
+
+## How this was made
+
+This project was written by [Claude](https://claude.com/claude-code) (Anthropic's AI coding assistant) under the
+direction of Matteo Magherini. Matteo defined the idea, made the product and design decisions, and set the workflow
+(test first, tagged commits, review and documentation for every feature). Claude wrote the code, the tests and the
+docs, and coordinated parallel sub-agents for independent features. Commits carry a `Co-Authored-By: Claude`
+trailer. The plan, decisions and progress log are in [`docs/`](docs/).
+
+## License
+
+[MIT](LICENSE) © 2026 Matteo Magherini
