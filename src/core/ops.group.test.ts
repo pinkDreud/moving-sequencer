@@ -131,6 +131,14 @@ describe('move into and out of groups', () => {
     expect(moved('A G[B C D] E', ['E', 'B'], null, 0)).toBe('B E A G[C D]');
   });
 
+  it('dissolves the parent when a square moves into its only sibling group', () => {
+    expect(moved('A G[B H[C D]]', ['B'], 'H', 0)).toBe('A H[B C D]');
+  });
+
+  it('keeps unrelated groups when a square moves between them', () => {
+    expect(moved('G[A B C] H[D E]', ['C'], 'H', 2)).toBe('G[A B] H[D E C]');
+  });
+
   it('adjusts the index only for moved children of the target group', () => {
     expect(moved('A G[B C]', ['A', 'B'], 'G', 2)).toBe('G[C A B]');
   });
