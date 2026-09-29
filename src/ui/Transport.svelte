@@ -1,12 +1,17 @@
 <script lang="ts">
   import type { Transport } from '../audio/transport';
-  import type { SlotValue } from '../core/model';
+  import type { SlotValue, TempoFactor } from '../core/model';
   import type { AppState } from '../state.svelte';
 
   let { app, transport }: { app: AppState; transport: Transport } = $props();
 
   const id = $props.id();
   const SLOT_VALUES: readonly SlotValue[] = [4, 8, 16];
+  const SPEEDS: readonly { factor: TempoFactor; label: string }[] = [
+    { factor: 0.5, label: '½×' },
+    { factor: 1, label: '1×' },
+    { factor: 2, label: '2×' },
+  ];
 
   /** Applies the typed tempo (clamped by the state) and shows what was actually stored. */
   function commitBpm(input: HTMLInputElement): void {
@@ -71,6 +76,24 @@
   </div>
 
   <div class="field">
+    <span class="label" id="{id}-speed">Speed</span>
+    <div class="speed" role="radiogroup" aria-labelledby="{id}-speed">
+      {#each SPEEDS as speed (speed.factor)}
+        <label class="seg">
+          <input
+            type="radio"
+            name="{id}-speed"
+            value={speed.factor}
+            checked={(app.song.tempoFactor ?? 1) === speed.factor}
+            onchange={() => app.setTempoFactor(speed.factor)}
+          />
+          <span>{speed.label}</span>
+        </label>
+      {/each}
+    </div>
+  </div>
+
+  <div class="field">
     <label for="{id}-slot">Slot value</label>
     <select
       id="{id}-slot"
@@ -132,9 +155,60 @@
     gap: 4px;
   }
 
-  label {
+  label,
+  .label {
     color: var(--muted);
     font-size: 12px;
+  }
+
+  /* Segmented control: real radio inputs (keyboard arrows, screen readers), drawn as three joined buttons. */
+  .speed {
+    display: flex;
+    min-height: 44px;
+    border: 1px solid color-mix(in srgb, var(--fg) 25%, var(--bg));
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .seg {
+    position: relative;
+    display: flex;
+  }
+
+  .seg input {
+    position: absolute;
+    opacity: 0;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .seg span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    padding: 0 8px;
+    background: color-mix(in srgb, var(--fg) 8%, var(--bg));
+    color: var(--fg);
+    font-size: 16px;
+  }
+
+  .seg + .seg span {
+    border-left: 1px solid color-mix(in srgb, var(--fg) 25%, var(--bg));
+  }
+
+  .seg input:checked + span {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 600;
+  }
+
+  .seg input:focus-visible + span {
+    outline: 2px solid var(--fg);
+    outline-offset: -3px;
   }
 
   input,

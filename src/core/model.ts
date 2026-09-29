@@ -27,10 +27,16 @@ export interface Track {
 /** Note value of one top-level slot: 4 = quarter, 8 = eighth, 16 = sixteenth. */
 export type SlotValue = 4 | 8 | 16;
 
+/** Playback speed relative to the BPM: ½×, 1× or 2×. */
+export type TempoFactor = 0.5 | 1 | 2;
+export const TEMPO_FACTORS: readonly TempoFactor[] = [0.5, 1, 2];
+
 export interface Song {
   version: 1;
   bpm: number;
   slotValue: SlotValue;
+  /** Missing means 1× (songs saved before the multiplier existed). */
+  tempoFactor?: TempoFactor;
   tracks: Track[];
 }
 

@@ -9,6 +9,7 @@ import {
   type Sound,
   type SoundId,
   type Track,
+  type TempoFactor,
 } from './core/model';
 import { clearSound, nodeIds } from './core/ops';
 
@@ -88,6 +89,10 @@ export class AppState {
     const clamped = Math.round(Math.min(BPM_MAX, Math.max(BPM_MIN, bpm)));
     // Like the ops, an unchanged value keeps the song object (autosave compares references).
     if (clamped !== this.song.bpm) this.song = { ...this.song, bpm: clamped };
+  }
+
+  setTempoFactor(tempoFactor: TempoFactor): void {
+    if (tempoFactor !== (this.song.tempoFactor ?? 1)) this.song = { ...this.song, tempoFactor };
   }
 
   setSlotValue(slotValue: SlotValue): void {
