@@ -17,7 +17,7 @@ Each feature has a doc `NN-slug.md` using the template below. Status: `planned` 
 | 10  | [Autosave](10-autosave.md)                              | done    |
 | 11  | [PWA](11-pwa.md)                                        | done    |
 | 12  | [Half / double tempo](12-tempo-multiplier.md)           | done    |
-| 13  | [Swing](13-swing.md)                                    | planned |
+| 13  | [Swing](13-swing.md)                                    | done    |
 | 14  | [Preparation area](14-prep-area.md)                     | planned |
 
 ## Template

@@ -4,8 +4,8 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Current state
 
-- **Phase:** v1 plus user feedback round 1. Features 00–12 are done (594 unit, 150 e2e tests), and issue #1 is fixed and closed.
-- **Next step:** 13 swing ∥ 14 preparation area (specs are written; worktree agents on `feat/13-swing` and
+- **Phase:** features 00–13 are done and live (632 unit, 156 e2e tests). Issue #1 is fixed, and updates now reach open pages.
+- **Next step:** review and merge 14 preparation area (worktree agent on `feat/14-prep-area`).
   `feat/14-prep-area`).
   for Pages, or Cloudflare/Netlify), multi-track, undo/redo, lasso selection, export/import.
 - **Real-device checks pending:** how the kit sounds; iOS long-press drag; mic recording over `npm run dev:https`
@@ -25,6 +25,13 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-29 — 13 swing merged
+
+- `warp`/`unwarp` in `core/timing.ts` (pairs of slots; an odd-length pattern's last slot stays straight).
+  The scheduler cursor stays unwarped, and only slot↔seconds goes through the warp. A swing change mid-play applies
+  from the cursor. The reviewer fuzzed 700 random scenarios: no double or missing notes.
+- To check by ear: 33 % ≈ triplet shuffle, 50 % hard swing, 75 % dotted.
 
 ### 2026-09-29 — updates now reach users
 
