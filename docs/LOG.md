@@ -4,10 +4,10 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Current state
 
-- **Phase:** 00–07 done (346 unit, 40 e2e tests). The app plays, shows the playhead, and edits through palette,
-  selection bar and shortcuts. 08 drag & drop is in progress on `feat/08-drag-drop`: `dropTarget` and the gesture
-  state machine are done; wiring them into the Strip is next.
-- **Next step:** finish 08 (Strip integration, ghost, insertion line, e2e while playing), then 09 mic ∥ 10 autosave
+- **Phase:** 00–08 done (389 unit, 93 e2e tests). The core experience works: live drag & drop while playing, on
+  mouse, pen and touch.
+- **Next step:** 09 mic recording ∥ 10 autosave (specs to write), then 11 PWA. The user should listen to the kit on
+  a real device and try touch drag on iOS.
 - **Blockers:** none. No deployment: Pages is unavailable for a private repo on the free plan, and the user chose "no deploy for now".
 
 ## Documentation index
@@ -21,6 +21,15 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-29 — 08 drag & drop
+
+- `src/core/dropTarget.ts` (pure hit-testing), `src/ui/drag.ts` (gesture state machine), `src/ui/dragDrop.ts`
+  (DOM layout snapshot, `dragIds`, `applyDrop`), integrated into `Strip.svelte`/`NodeView.svelte`.
+- A reviewer subagent found 7 issues (2 high: the click swallowed after a drop could leak to a later click, and an
+  Escape-aborted drag could change the selection on release). All fixed with regression tests. Details and design
+  notes in `docs/features/08-drag-drop.md`.
+- Lesson: never use `setTimeout(0)` to scope "the click after this pointerup"; tie it to the next pointerdown.
 
 ### 2026-09-29 — 06 audio/transport + 07 strip UI merged
 
