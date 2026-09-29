@@ -125,18 +125,42 @@ describe('Strip selection', () => {
   it('a touch tap toggles the node', () => {
     const { app, byId } = renderStrip(['a']);
     fireEvent.pointerDown(byId('b'), { pointerType: 'touch' });
-    fireEvent.click(byId('b'));
+    fireEvent.click(byId('b'), { detail: 1 });
     expect(selected(app)).toEqual(['a', 'b']);
     fireEvent.pointerDown(byId('a'), { pointerType: 'touch' });
-    fireEvent.click(byId('a'));
+    fireEvent.click(byId('a'), { detail: 1 });
     expect(selected(app)).toEqual(['b']);
   });
 
   it('forgets the touch pointer type after the click, so a keyboard click replaces', () => {
     const { app, byId } = renderStrip();
     fireEvent.pointerDown(byId('a'), { pointerType: 'touch' });
-    fireEvent.click(byId('a'));
+    fireEvent.click(byId('a'), { detail: 1 });
     fireEvent.click(byId('b'));
+    expect(selected(app)).toEqual(['b']);
+  });
+
+  // A pointer-made click has detail ≥ 1; a keyboard-made one (Enter/Space) has detail 0.
+  it('a keyboard click after a touch that turned into a scroll replaces', () => {
+    const { app, byId } = renderStrip(['c']);
+    fireEvent.pointerDown(byId('a'), { pointerType: 'touch' });
+    fireEvent.pointerCancel(byId('a'), { pointerType: 'touch' });
+    fireEvent.click(byId('b'));
+    expect(selected(app)).toEqual(['b']);
+  });
+
+  it('a keyboard click after a touch released outside the strip replaces', () => {
+    const { app, byId } = renderStrip(['c']);
+    fireEvent.pointerDown(byId('a'), { pointerType: 'touch' });
+    fireEvent.click(byId('b'));
+    expect(selected(app)).toEqual(['b']);
+  });
+
+  it('a mouse click after a cancelled touch replaces', () => {
+    const { app, byId } = renderStrip(['c']);
+    fireEvent.pointerDown(byId('a'), { pointerType: 'touch' });
+    fireEvent.pointerCancel(byId('a'), { pointerType: 'touch' });
+    fireEvent.click(byId('b'), { detail: 1 });
     expect(selected(app)).toEqual(['b']);
   });
 
