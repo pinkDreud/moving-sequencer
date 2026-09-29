@@ -5,15 +5,24 @@
 
   let { app }: { app: AppState } = $props();
 
-  // Not every browser reports the pointer type on `click`, so remember it from the pointerdown that led to it.
+  // The click's own pointerType is unreliable (WebKit says "mouse" after a touch tap), so remember it from the
+  // pointerdown that led to the click.
   let lastPointerType = '';
 
   function onpointerdown(e: PointerEvent) {
     lastPointerType = e.pointerType;
   }
 
+  // A touch that turns into a scroll never clicks; don't let it leak into the next click.
+  function onpointercancel() {
+    lastPointerType = '';
+  }
+
   function onclick(e: MouseEvent) {
-    const pointerType = lastPointerType || ('pointerType' in e ? String(e.pointerType) : '');
+    // detail 0 = click made by the keyboard (Enter/Space), whatever pointer was pressed before.
+    const fromPointer = e.detail > 0;
+    const own = 'pointerType' in e ? String(e.pointerType) : '';
+    const pointerType = fromPointer ? lastPointerType || own : '';
     lastPointerType = '';
     const hit = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-node-id]') : null;
     const id = hit?.dataset.nodeId;
@@ -29,7 +38,7 @@
 
 <!-- Keyboard users reach every node through its own <button>; clicks bubble here so one handler serves them all. -->
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-<section class="strip" aria-label="Pattern" {onpointerdown} {onclick}>
+<section class="strip" aria-label="Pattern" {onpointerdown} {onpointercancel} {onclick}>
   {#each app.track.nodes as node (node.id)}
     <NodeView {node} {app} />
   {/each}
