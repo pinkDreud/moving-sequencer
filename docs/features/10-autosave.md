@@ -10,7 +10,7 @@ The pattern, tempo, slot value and recorded sounds survive a reload. Saving happ
 ## Acceptance criteria
 
 - [ ] Storage module (`src/storage/db.ts`, via `idb-keyval`): `saveSong(song)`, `loadSong()`, `saveRecording(sound,
-  blob)`, `loadRecordings()` → `{ sound, blob }[]`, `deleteRecording(id)`. Keys: `song`, `recording:<id>`.
+blob)`, `loadRecordings()` → `{ sound, blob }[]`, `deleteRecording(id)`. Keys: `song`, `recording:<id>`.
 - [ ] The saved song carries `version: 1`. `loadSong` validates what it reads: the structure, known node kinds,
       unique ids, bpm range and slot value. Invalid or unknown data → `null` (the app falls back to the default
       song). Loaded tracks are passed through `normalize`.
