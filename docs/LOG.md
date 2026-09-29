@@ -4,9 +4,10 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Current state
 
-- **Phase:** 00–05 + app-state skeleton done (163 tests). Two worktree agents are running:
-  06 audio/transport (`feat/06-audio-transport`) and 07 strip UI (`feat/07-strip-ui`).
-- **Next step:** review and merge 06 and 07 (expect a small conflict in `App.svelte`), then 08 drag & drop
+- **Phase:** 00–07 done (346 unit, 40 e2e tests). The app plays, shows the playhead, and edits through palette,
+  selection bar and shortcuts. 08 drag & drop is in progress on `feat/08-drag-drop`: `dropTarget` and the gesture
+  state machine are done; wiring them into the Strip is next.
+- **Next step:** finish 08 (Strip integration, ghost, insertion line, e2e while playing), then 09 mic ∥ 10 autosave
 - **Blockers:** none. No deployment: Pages is unavailable for a private repo on the free plan, and the user chose "no deploy for now".
 
 ## Documentation index
@@ -20,6 +21,17 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-29 — 06 audio/transport + 07 strip UI merged
+
+- 06: `WebAudioEngine`, `RealtimeFakeEngine`, `unlockOnGesture` (engine.ts); kit synthesized sample by sample in JS
+  (kit.ts, deterministic); `createTransport` (transport.ts) drives the scheduler and the rAF playhead;
+  `Transport.svelte`. `?fake-audio` exposes `window.__seqTest = { engine, app }`. Space = play/stop.
+- 07: `Editor.svelte` (Strip + Palette + SelectionBar + shortcuts), `NodeView.svelte` (recursive), helpers
+  `selection.ts`, `actions.ts`, `shortcuts.ts`. DOM contract for 08 is in `docs/features/07-strip-ui.md` Notes.
+- The two agents' e2e runs collided on port 4173 (Playwright reused the other's server). Fixed: `PW_PORT` env and
+  `reuseExistingServer: false`.
+- Real audio has not been heard by a human yet. Please listen on a device (`npm run dev -- --host`).
 
 ### 2026-09-29 — app-state skeleton
 
