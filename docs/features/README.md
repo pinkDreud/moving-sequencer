@@ -15,7 +15,7 @@ Each feature has a doc `NN-slug.md` using the template below. Status: `planned` 
 | 08  | [Drag & drop](08-drag-drop.md)                          | done    |
 | 09  | [Mic recording](09-mic-recording.md)                    | planned |
 | 10  | [Autosave](10-autosave.md)                              | planned |
-| 11  | PWA                                                     | planned |
+| 11  | [PWA](11-pwa.md)                                        | done    |
 
 ## Template
 
