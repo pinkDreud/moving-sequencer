@@ -4,19 +4,21 @@ Load this file at the start of every session. Then read `docs/LOG.md` to see whe
 and `docs/PLAN.md` for the design. Do not start coding before reading all three.
 
 ## Project map
-| What | Where |
-|---|---|
-| Design & roadmap | `docs/PLAN.md` |
-| Progress log (current state, next step) | `docs/LOG.md` |
-| Per-feature specs + acceptance criteria | `docs/features/NN-slug.md` |
-| Pure logic (model, ops, timeline, drop hit-testing) | `src/core/` |
-| Audio (engine, scheduler, kit, recorder) | `src/audio/` |
-| Persistence | `src/storage/` |
-| App state (Svelte runes store) | `src/state.svelte.ts` |
-| UI components | `src/ui/` |
-| E2E tests | `tests/e2e/` |
+
+| What                                                | Where                      |
+| --------------------------------------------------- | -------------------------- |
+| Design & roadmap                                    | `docs/PLAN.md`             |
+| Progress log (current state, next step)             | `docs/LOG.md`              |
+| Per-feature specs + acceptance criteria             | `docs/features/NN-slug.md` |
+| Pure logic (model, ops, timeline, drop hit-testing) | `src/core/`                |
+| Audio (engine, scheduler, kit, recorder)            | `src/audio/`               |
+| Persistence                                         | `src/storage/`             |
+| App state (Svelte runes store)                      | `src/state.svelte.ts`      |
+| UI components                                       | `src/ui/`                  |
+| E2E tests                                           | `tests/e2e/`               |
 
 ## Workflow (one feature at a time)
+
 1. **Define** — write/complete `docs/features/NN-slug.md`: behaviour, edge cases, acceptance criteria.
    Branch: `git switch -c feat/NN-slug`.
 2. **Test first** — write tests that encode the acceptance criteria. They must fail for the right reason.
@@ -33,13 +35,15 @@ and `docs/PLAN.md` for the design. Do not start coding before reading all three.
 Never skip step 2. Bugs get a failing regression test before the fix.
 
 ## Commits
-- Format: `[TAG] imperative summary` (≤ 72 chars), blank line, optional body explaining *why*.
+
+- Format: `[TAG] imperative summary` (≤ 72 chars), blank line, optional body explaining _why_.
 - Tags: `[FEATURE] [BUGFIX] [TEST] [DOC] [CI] [REFACTOR] [CHORE]`.
 - One logical change per commit. `[TEST]` commits may have failing tests (feature branch only);
   every other commit must pass `npm run verify`.
 - LLM-authored commits end with the tool's co-author trailer.
 
 ## Code conventions
+
 - **TypeScript strict**, no `any` (use `unknown` + narrowing), no non-null `!` unless justified in a comment.
 - **`src/core` is pure**: no DOM, no Web Audio, no Svelte, no `Date.now()`/`Math.random()` —
   inject ids and clocks. Everything in core is unit-tested.
@@ -53,11 +57,12 @@ Never skip step 2. Bugs get a failing regression test before the fix.
 - **Audio**: all sound timing goes through the scheduler with `AudioContext.currentTime`; never `setTimeout` for notes.
 - Naming: `camelCase` functions/vars, `PascalCase` types/components, `kebab-case` for docs, `NN-slug` for features.
   Files: `thing.ts` + colocated `thing.test.ts`; components `PascalCase.svelte` + `PascalCase.test.ts`.
-- Comments explain *why*, not *what*. Public core functions get a one-line doc comment.
+- Comments explain _why_, not _what_. Public core functions get a one-line doc comment.
 - Formatting by Prettier, linting by ESLint — don't hand-format against them.
 - Accessibility: buttons are `<button>`, squares have `aria-label` (sound name / "silent") and `aria-pressed` for selection.
 
 ## Tests
+
 - Unit/component: Vitest (+ @testing-library/svelte, jsdom). Colocated `*.test.ts`.
 - E2E: Playwright in `tests/e2e/`, app opened with `?fake-audio` so scheduled sounds can be asserted via
   `window.__seqTest`. Projects: chromium, webkit, mobile-safari (iPhone), mobile-chrome (Pixel).
@@ -65,17 +70,19 @@ Never skip step 2. Bugs get a failing regression test before the fix.
 - Use deterministic id generators and fake clocks. No sleeps in unit tests.
 
 ## Commands
-| Command | Does |
-|---|---|
-| `npm run dev` | dev server |
-| `npm run test` | unit + component tests |
-| `npm run test:e2e` | Playwright |
-| `npm run lint` / `npm run format` | ESLint / Prettier |
-| `npm run check` | svelte-check + tsc |
-| `npm run verify` | lint + check + test (run before every non-`[TEST]` commit) |
-| `npm run build` | production build (`dist/`) |
+
+| Command                           | Does                                                       |
+| --------------------------------- | ---------------------------------------------------------- |
+| `npm run dev`                     | dev server                                                 |
+| `npm run test`                    | unit + component tests                                     |
+| `npm run test:e2e`                | Playwright                                                 |
+| `npm run lint` / `npm run format` | ESLint / Prettier                                          |
+| `npm run check`                   | svelte-check + tsc                                         |
+| `npm run verify`                  | lint + check + test (run before every non-`[TEST]` commit) |
+| `npm run build`                   | production build (`dist/`)                                 |
 
 ## Working with agents
+
 - Independent roadmap items (see PLAN.md §3 "Parallelizable with") can run in parallel, each agent in its own
   git worktree on its own `feat/NN-slug` branch, following this same workflow. Merge one at a time, rebasing the rest.
 - An agent's brief must name: the feature doc, the files it owns, and "follow AGENTS.md".
