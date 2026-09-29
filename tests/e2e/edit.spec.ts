@@ -1,0 +1,83 @@
+import { expect, test, type Locator, type Page } from '@playwright/test';
+
+const strip = (page: Page) => page.getByRole('region', { name: 'Pattern' });
+const slots = (page: Page) => strip(page).locator(':scope > [data-node-id]');
+const paletteButton = (page: Page, name: string) =>
+  page.getByRole('group', { name: 'Sounds' }).getByRole('button', { name, exact: true });
+const barButton = (page: Page, name: string) =>
+  page.getByRole('toolbar', { name: 'Selection' }).getByRole('button', { name, exact: true });
+
+test('loads the default 8-slot beat', async ({ page }) => {
+  await page.goto('./');
+  await expect(slots(page)).toHaveCount(8);
+  await expect(slots(page).first()).toHaveAttribute('aria-label', 'Kick');
+});
+
+test('adds squares from the palette, groups three, ungroups them and deletes them', async ({
+  page,
+  isMobile,
+}) => {
+  // Mouse: first click selects, shift-click adds. Touch: every tap toggles.
+  const pick = async (target: Locator, first: boolean) => {
+    if (isMobile) await target.tap();
+    else await target.click(first ? {} : { modifiers: ['Shift'] });
+  };
+
+  await page.goto('./');
+  await expect(slots(page)).toHaveCount(8);
+
+  await paletteButton(page, 'Clap').click();
+  await paletteButton(page, 'Silent').click();
+  await paletteButton(page, 'Rim').click();
+  await expect(slots(page)).toHaveCount(11);
+  await expect(slots(page).nth(8)).toHaveAttribute('aria-label', 'Clap');
+  await expect(slots(page).nth(9)).toHaveAttribute('aria-label', 'silent');
+  await expect(slots(page).nth(10)).toHaveAttribute('aria-label', 'Rim');
+
+  await pick(slots(page).nth(8), true);
+  await pick(slots(page).nth(9), false);
+  await pick(slots(page).nth(10), false);
+  await expect(page.getByRole('toolbar', { name: 'Selection' })).toContainText('3 selected');
+  await expect(slots(page).nth(8)).toHaveAttribute('aria-pressed', 'true');
+
+  await barButton(page, 'Group').click();
+  await expect(slots(page)).toHaveCount(9);
+  const grouped = slots(page).nth(8);
+  await expect(grouped.locator(':scope > .children > [data-node-id]')).toHaveCount(3);
+  await expect(grouped.getByRole('button', { name: 'Group of 3' })).toHaveAttribute('aria-pressed', 'true');
+
+  await barButton(page, 'Ungroup').click();
+  await expect(slots(page)).toHaveCount(11);
+  await expect(page.getByRole('toolbar', { name: 'Selection' })).toContainText('3 selected');
+
+  await barButton(page, 'Delete').click();
+  await expect(slots(page)).toHaveCount(8);
+  await expect(page.getByRole('toolbar', { name: 'Selection' })).toHaveCount(0);
+});
+
+test('a tap on the empty strip area clears the selection', async ({ page, isMobile }) => {
+  await page.goto('./');
+  if (isMobile) await slots(page).first().tap();
+  else await slots(page).first().click();
+  await expect(page.getByRole('toolbar', { name: 'Selection' })).toBeVisible();
+  const box = await strip(page).boundingBox();
+  if (!box) throw new Error('strip not laid out');
+  // Bottom-right corner of the strip: after the last slot of the last row.
+  const at = { x: box.x + box.width - 4, y: box.y + box.height - 4 };
+  if (isMobile) await page.touchscreen.tap(at.x, at.y);
+  else await page.mouse.click(at.x, at.y);
+  await expect(page.getByRole('toolbar', { name: 'Selection' })).toHaveCount(0);
+});
+
+test('fits a 360 px wide phone without horizontal scroll, slots stay ≥ 44 px', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.goto('./');
+  await slots(page).first().click();
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+  const box = await slots(page).first().boundingBox();
+  expect(box?.width).toBeGreaterThanOrEqual(44);
+  expect(box?.height).toBeGreaterThanOrEqual(44);
+});
