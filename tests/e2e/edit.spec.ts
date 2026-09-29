@@ -65,7 +65,8 @@ test('all slots have the same width, and a group splits its slot evenly', async 
   await expect(slots(page)).toHaveCount(6);
 
   const widths = await slots(page).evaluateAll((els) => els.map((el) => el.getBoundingClientRect().width));
-  expect(widths[0]).toBeGreaterThanOrEqual(44);
+  // Narrow phones shrink squares so 8 fit per row (≈ 34 px at 360 px).
+  expect(widths[0]).toBeGreaterThanOrEqual(30);
   for (const w of widths) expect(w).toBeCloseTo(widths[0] ?? 0, 1);
 
   const children = slots(page).first().locator(':scope > .children > [data-node-id]');
@@ -75,20 +76,29 @@ test('all slots have the same width, and a group splits its slot evenly', async 
 });
 
 test('a tap on the empty strip area clears the selection', async ({ page, isMobile }) => {
-  await page.goto('./');
+  // A short pattern, so the row has real empty space (8 slots fill a whole row on a phone).
+  await page.goto('./?fake-audio');
+  await page.waitForFunction(() => window.__seqTest !== undefined);
+  await page.evaluate(() => {
+    const app = window.__seqTest!.app;
+    app.updateTrack((t) => ({ ...t, nodes: t.nodes.slice(0, 3) }));
+  });
+  await expect(slots(page)).toHaveCount(3);
   if (isMobile) await slots(page).first().tap();
   else await slots(page).first().click();
   await expect(page.getByRole('toolbar', { name: 'Selection' })).toBeVisible();
   const box = await strip(page).boundingBox();
   if (!box) throw new Error('strip not laid out');
-  // Bottom-right corner of the strip: after the last slot of the last row.
-  const at = { x: box.x + box.width - 4, y: box.y + box.height - 4 };
+  // Right half of the row, well away from the last of the three squares.
+  const at = { x: box.x + box.width * 0.75, y: box.y + box.height / 2 };
   if (isMobile) await page.touchscreen.tap(at.x, at.y);
   else await page.mouse.click(at.x, at.y);
   await expect(page.getByRole('toolbar', { name: 'Selection' })).toHaveCount(0);
 });
 
-test('fits a 360 px wide phone without horizontal scroll, slots stay ≥ 44 px', async ({ page }) => {
+test('fits a 360 px wide phone without horizontal scroll, squares stay square and ≥ 30 px', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await page.goto('./');
   await slots(page).first().click();
@@ -97,8 +107,8 @@ test('fits a 360 px wide phone without horizontal scroll, slots stay ≥ 44 px',
   );
   expect(overflow).toBeLessThanOrEqual(0);
   const box = await slots(page).first().boundingBox();
-  expect(box?.width).toBeGreaterThanOrEqual(44);
-  expect(box?.height).toBeGreaterThanOrEqual(44);
+  expect(box?.width).toBeGreaterThanOrEqual(30);
+  expect(box?.height).toBeCloseTo(box?.width ?? 0, 0);
 });
 
 test('issue #1: click a square, then a sample: the sound goes into that square', async ({
@@ -139,4 +149,26 @@ test('shift+click selects a range; Delete empties it; Ins adds an empty slot bef
   await expect(slots(page)).toHaveCount(9);
   await expect(slots(page).nth(6)).toHaveAttribute('aria-label', 'silent');
   await expect(slots(page).nth(7)).toHaveAttribute('aria-pressed', 'true');
+});
+
+for (const width of [320, 360, 412]) {
+  test(`a ${width} px wide screen fits at least 8 slots per row`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('./');
+    await expect(slots(page)).toHaveCount(8);
+    const tops = await slots(page).evaluateAll((els) =>
+      els.map((el) => Math.round(el.getBoundingClientRect().top)),
+    );
+    expect(new Set(tops).size).toBe(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  });
+}
+
+test('wide screens keep 56 px squares and fit more than 8 per row', async ({ page }) => {
+  await page.setViewportSize({ width: 1100, height: 800 });
+  await page.goto('./');
+  const width = await slots(page)
+    .first()
+    .evaluate((el) => el.getBoundingClientRect().width);
+  expect(width).toBeCloseTo(56, 0);
 });

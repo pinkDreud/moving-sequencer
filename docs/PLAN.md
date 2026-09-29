@@ -177,7 +177,7 @@ Classic Web Audio lookahead scheduler ("A Tale of Two Clocks").
 
 - **Strip**: top-level slots in a wrapping flex row. Every slot has the same width (time ∝ width).
   A group renders inside one slot, children side by side with equal width (nested groups recurse).
-  Min touch target 44 px for top-level squares.
+  At least 8 slots per row: squares are 56 px and shrink on narrow screens (≈ 34 px at 360 px, see feature 16).
 - **Playhead**: `requestAnimationFrame` → `scheduler.positionAt(engine.now())` → highlight the leaf containing it.
 - **Palette**: one button per sound + "silent"; tap appends a square (or inserts after selection).
 - **Transport**: play/stop, BPM (numeric + slider, 30–300), slot value (1/4, 1/8, 1/16).

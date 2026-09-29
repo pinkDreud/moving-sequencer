@@ -23,16 +23,19 @@ body {
   color: var(--fg);
 }
 
-/* Strip geometry (07), shared with drag & drop (08). Slots stay ≥ 44 px so they are touch targets. */
+/*
+ * Strip geometry (07), shared with drag & drop (08). A row always holds at least 8 slots: squares are 56 px, and
+ * shrink on narrow screens so 8 fit (about 34 px on a 360 px phone). `100cqw` is the width of the editor, the
+ * nearest size container; 20 px is the strip's padding.
+ */
 :root {
   --surface: #1f1f29;
-  --slot-size: 56px;
   --slot-gap: 6px;
+  --slot-size: min(56px, calc((100cqw - 20px - 7 * var(--slot-gap)) / 8));
 }
 
 @media (max-width: 480px) {
   :root {
-    --slot-size: 44px;
     --slot-gap: 5px;
   }
 }
