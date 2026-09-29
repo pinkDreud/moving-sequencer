@@ -5,13 +5,10 @@
   let {
     sounds,
     onpick,
-    armed = false,
     recording,
   }: {
     sounds: readonly Sound[];
     onpick: (soundId: SoundId | null) => void;
-    /** The next pick sets the sound of the selection (SelectionBar "Sound"). */
-    armed?: boolean;
     /** Record button and recordings' delete buttons; without it the palette only picks sounds. */
     recording?: RecordControl;
   } = $props();
@@ -78,10 +75,7 @@
   </button>
 {/snippet}
 
-<div class="palette" class:armed role="group" aria-label="Sounds">
-  {#if armed}
-    <p class="hint">Pick a sound for the selection</p>
-  {/if}
+<div class="palette" role="group" aria-label="Sounds">
   {#each recording ? builtIn : sounds as sound (sound.id)}
     {@render soundButton(sound)}
   {/each}
@@ -130,19 +124,10 @@
     border-radius: 12px;
   }
 
-  .palette.armed {
-    border-color: var(--accent);
-  }
-
-  .hint,
   .note {
     grid-column: 1 / -1;
     margin: 0 0 2px;
     font-size: 0.9rem;
-  }
-
-  .hint {
-    color: var(--accent);
   }
 
   .note {

@@ -2,23 +2,20 @@
 import { square, type SoundId } from '../core/model';
 import { groupOrJoin, insert, remove, setSound, toggleMute } from '../core/ops';
 import type { AppState } from '../state.svelte';
-import { insertTarget, selectedGroupIds, ungroupAll } from './selection';
+import { selectedGroupIds, ungroupAll } from './selection';
 import type { Shortcut } from './shortcuts';
 
 /**
- * A palette tap. With `applyToSelection` and a selection, sets the sound of the selection. Otherwise inserts
- * a square after the selection (and selects it, so further taps continue in order) or appends it.
+ * A palette tap. With a selection, the selected squares (and all squares in selected groups) take the sound; with
+ * nothing selected, a new square with the sound is appended at the end.
  */
-export function pickSound(app: AppState, soundId: SoundId | null, applyToSelection: boolean): void {
+export function pickSound(app: AppState, soundId: SoundId | null): void {
   const ids = [...app.selection];
-  if (applyToSelection && ids.length > 0) {
-    app.updateTrack((t) => setSound(t, ids, soundId));
-    return;
-  }
-  const target = insertTarget(app.track, app.selection);
-  const created = square(app.nextId(), soundId);
-  app.updateTrack((t) => insert(t, target, created));
-  if (ids.length > 0) app.select([created.id]);
+  if (ids.length > 0) app.updateTrack((t) => setSound(t, ids, soundId));
+  else
+    app.updateTrack((t) =>
+      insert(t, { parentId: null, index: t.nodes.length }, square(app.nextId(), soundId)),
+    );
 }
 
 export function deleteSelection(app: AppState): void {

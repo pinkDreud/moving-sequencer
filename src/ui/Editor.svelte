@@ -10,16 +10,8 @@
 
   let { app, recording }: { app: AppState; recording?: RecordControl } = $props();
 
-  let soundMode = $state(false);
-
-  // Sound mode belongs to a selection: once nothing is selected it has nothing to apply to.
-  $effect(() => {
-    if (app.selection.size === 0) soundMode = false;
-  });
-
   function onpick(soundId: SoundId | null) {
-    pickSound(app, soundId, soundMode);
-    soundMode = false;
+    pickSound(app, soundId);
   }
 
   function onkeydown(e: KeyboardEvent) {
@@ -34,6 +26,6 @@
 
 <div class="editor">
   <Strip {app} />
-  <Palette sounds={app.sounds} {onpick} armed={soundMode} {recording} />
-  <SelectionBar {app} bind:soundMode />
+  <Palette sounds={app.sounds} {onpick} {recording} />
+  <SelectionBar {app} />
 </div>

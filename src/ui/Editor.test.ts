@@ -6,7 +6,6 @@ import { shape } from '../core/test-helpers';
 import Editor from './Editor.svelte';
 import { makeApp } from './test-helpers';
 
-const button = (name: string | RegExp) => screen.getByRole('button', { name });
 const paletteButton = (name: string) => {
   const palette = screen.getByRole('group', { name: 'Sounds' });
   const found = [...palette.querySelectorAll('button')].find((b) => b.textContent?.trim() === name);
@@ -35,36 +34,22 @@ describe('Editor', () => {
     expect(within(strip).getByRole('button', { name: 'Clap' })).toHaveAttribute('data-node-id', 'n1');
   });
 
-  it('a palette tap with a selection inserts after it', () => {
-    const app = makeApp('A B', ['A']);
+  it('a palette tap with nothing selected appends a square at the end', () => {
+    const app = makeApp('A B');
     render(Editor, { app });
     fireEvent.click(paletteButton('Silent'));
-    expect(shape(app.track)).toBe('A n1 B');
+    expect(shape(app.track)).toBe('A B n1');
   });
 
-  it('Sound then a palette tap sets the sound of the selection once, then inserting resumes', () => {
+  it('a palette tap with a selection sets the sound of the selected squares (no Sound button)', () => {
     const app = makeApp('A B C', ['A', 'C']);
     render(Editor, { app });
-    fireEvent.click(button('Sound'));
+    expect(screen.queryByRole('button', { name: 'Sound' })).toBeNull();
     fireEvent.click(paletteButton('Rim'));
     expect(shape(app.track)).toBe('A B C');
     expect(findNode(app.track, 'A')).toMatchObject({ soundId: 'rim' });
     expect(findNode(app.track, 'C')).toMatchObject({ soundId: 'rim' });
     expect(findNode(app.track, 'B')).toMatchObject({ soundId: 'kick' });
-    expect(button('Sound')).toHaveAttribute('aria-pressed', 'false');
-    fireEvent.click(paletteButton('Rim'));
-    expect(shape(app.track)).toBe('A B C n1');
-  });
-
-  it('clearing the selection turns the sound mode off', () => {
-    const app = makeApp('A B', ['A']);
-    render(Editor, { app });
-    fireEvent.click(button('Sound'));
-    app.clearSelection();
-    flushSync();
-    app.select(['B']);
-    flushSync();
-    expect(button('Sound')).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('keyboard: Delete, M, G, Shift+G and Escape act on the selection', () => {

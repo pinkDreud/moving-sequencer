@@ -17,7 +17,7 @@ const selected = (app: AppState) => [...app.selection].sort();
 describe('pickSound', () => {
   it('appends a square with the sound when nothing is selected, keeping the selection empty', () => {
     const app = makeApp('A B');
-    pickSound(app, 'snare', false);
+    pickSound(app, 'snare');
     expect(shape(app.track)).toBe('A B n1');
     expect(findNode(app.track, 'n1')).toMatchObject({ kind: 'square', soundId: 'snare', muted: false });
     expect(app.selection.size).toBe(0);
@@ -25,37 +25,38 @@ describe('pickSound', () => {
 
   it('appends a silent square for "Silent"', () => {
     const app = makeApp('A');
-    pickSound(app, null, false);
+    pickSound(app, null);
     expect(findNode(app.track, 'n1')).toMatchObject({ kind: 'square', soundId: null });
   });
 
-  it('inserts after the last selected node and selects the new square, so taps build in order', () => {
-    const app = makeApp('A B C', ['A']);
-    pickSound(app, 'kick', false);
-    pickSound(app, 'snare', false);
-    expect(shape(app.track)).toBe('A n1 n2 B C');
-    expect(selected(app)).toEqual(['n2']);
+  it('issue #1: with a square selected, the tapped sound goes into that square, not the next one', () => {
+    const app = makeApp('A B C', ['B']);
+    pickSound(app, 'clap');
+    expect(shape(app.track)).toBe('A B C');
+    expect(findNode(app.track, 'B')).toMatchObject({ soundId: 'clap' });
+    expect(findNode(app.track, 'C')).toMatchObject({ soundId: 'kick' });
+    expect(selected(app)).toEqual(['B']);
   });
 
-  it('inserts inside a group when the last selected node is a child', () => {
-    const app = makeApp('A G[B C] D', ['B']);
-    pickSound(app, 'hat', false);
-    expect(shape(app.track)).toBe('A G[B n1 C] D');
-  });
-
-  it('sets the sound of the selection instead when asked to apply it', () => {
+  it('sets the sound of every selected square, and of all squares in a selected group', () => {
     const app = makeApp('A G[B C] D', ['A', 'G']);
-    pickSound(app, 'clap', true);
+    pickSound(app, 'clap');
     expect(shape(app.track)).toBe('A G[B C] D');
     for (const id of ['A', 'B', 'C']) expect(findNode(app.track, id)).toMatchObject({ soundId: 'clap' });
     expect(findNode(app.track, 'D')).toMatchObject({ soundId: 'kick' });
-    expect(selected(app)).toEqual(['A', 'G']);
   });
 
-  it('inserts when asked to apply but nothing is selected', () => {
-    const app = makeApp('A');
-    pickSound(app, 'clap', true);
-    expect(shape(app.track)).toBe('A n1');
+  it('a square inside a group changes only that square (no insertion into the group)', () => {
+    const app = makeApp('A G[B C] D', ['B']);
+    pickSound(app, 'hat');
+    expect(shape(app.track)).toBe('A G[B C] D');
+    expect(findNode(app.track, 'B')).toMatchObject({ soundId: 'hat' });
+  });
+
+  it('"Silent" with a selection makes the selected squares silent', () => {
+    const app = makeApp('A B', ['A']);
+    pickSound(app, null);
+    expect(findNode(app.track, 'A')).toMatchObject({ soundId: null });
   });
 });
 

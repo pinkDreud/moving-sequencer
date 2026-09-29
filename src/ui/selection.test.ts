@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { square } from '../core/model';
 import { parseTrack, shape } from '../core/test-helpers';
-import { allMuted, canGroup, insertTarget, selectMode, selectedGroupIds, ungroupAll } from './selection';
+import { allMuted, canGroup, selectMode, selectedGroupIds, ungroupAll } from './selection';
 
 const pointer = (
   pointerType: string,
@@ -32,29 +32,6 @@ describe('selectMode', () => {
 
   it('toggles on a pen tap, since a tablet has no modifier keys', () => {
     expect(selectMode(pointer('pen'))).toBe('toggle');
-  });
-});
-
-describe('insertTarget', () => {
-  it('appends at the end of the root when nothing is selected', () => {
-    expect(insertTarget(parseTrack('A B C'), new Set())).toEqual({ parentId: null, index: 3 });
-  });
-
-  it('inserts after the last selected node in document order, whatever the selection order', () => {
-    expect(insertTarget(parseTrack('A B C D'), new Set(['C', 'A']))).toEqual({ parentId: null, index: 3 });
-  });
-
-  it('inserts inside the parent group of the last selected node', () => {
-    expect(insertTarget(parseTrack('A G[B C] D'), new Set(['A', 'B']))).toEqual({ parentId: 'G', index: 1 });
-  });
-
-  it('treats a selected group as coming before its children', () => {
-    expect(insertTarget(parseTrack('A G[B C] D'), new Set(['B', 'G']))).toEqual({ parentId: 'G', index: 1 });
-    expect(insertTarget(parseTrack('A G[B C] D'), new Set(['G']))).toEqual({ parentId: null, index: 2 });
-  });
-
-  it('ignores unknown ids and appends when none is known', () => {
-    expect(insertTarget(parseTrack('A B'), new Set(['zz']))).toEqual({ parentId: null, index: 2 });
   });
 });
 
