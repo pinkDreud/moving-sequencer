@@ -38,7 +38,8 @@ function fakeContext(sampleRate: number) {
 
 describe('renderSound', () => {
   describe.each(KIT.map((sound) => sound.id))('%s', (id) => {
-    for (const sampleRate of [44100, 48000]) {
+    // Low rates happen too (e.g. a Bluetooth headset in call mode): filters must stay stable there.
+    for (const sampleRate of [8000, 16000, 22050, 44100, 48000, 96000]) {
       it(`is non-silent, at most 1 s and within [-1, 1] at ${sampleRate} Hz`, () => {
         const samples = renderSound(id, sampleRate);
         expect(samples).toBeInstanceOf(Float32Array);
