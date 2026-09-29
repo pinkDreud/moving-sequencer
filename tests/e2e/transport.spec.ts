@@ -105,6 +105,8 @@ test('2× speed halves the gap between scheduled notes', async ({ page }) => {
 });
 
 test('swing makes the gaps between notes alternate long/short; at 0 they are equal', async ({ page }) => {
+  // The measurement needs a note on every slot and an even length: the default beat has both.
+  expect((await page.evaluate(() => window.__seqTest!.app.song.tracks[0]!.nodes.length)) % 2).toBe(0);
   const gaps = async () => {
     await page.evaluate(() => (window.__seqTest!.engine.log.length = 0));
     await expect
@@ -121,8 +123,16 @@ test('swing makes the gaps between notes alternate long/short; at 0 they are equ
   await swing.fill('50');
   await expect(page.getByText('50 %')).toBeVisible();
   expect(await page.evaluate(() => window.__seqTest!.app.song.swing)).toBe(0.5);
-  await page.waitForTimeout(300);
-  const [g0, g1, g2, g3] = await gaps();
+  // The pair in progress when the slider moved may be uneven; measure once a full swung pattern shows.
+  let measured: number[] = [];
+  await expect
+    .poll(async () => {
+      measured = await gaps();
+      const [a, b] = measured;
+      return Math.max(a!, b!) / Math.min(a!, b!);
+    })
+    .toBeCloseTo(3, 2);
+  const [g0, g1, g2, g3] = measured;
   // Offbeat delayed by half a slot: 1.5 and 0.5 slots, in either order depending on where the log starts.
   expect(Math.max(g0!, g1!) / Math.min(g0!, g1!)).toBeCloseTo(3, 2);
   expect(g0! + g1!).toBeCloseTo(2 * straight[0]!, 3);
