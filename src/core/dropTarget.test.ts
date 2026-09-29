@@ -95,7 +95,9 @@ describe('dropTarget over groups', () => {
       { id: 'Y', parentId: 'H', index: 0, kind: 'square', depth: 2, rect: rect(50, 0, 25, 50) },
       { id: 'Z', parentId: 'H', index: 1, kind: 'square', depth: 2, rect: rect(75, 0, 25, 50) },
     ];
-    expect(dropTarget({ x: 80, y: 25 }, nested, strip)).toMatchObject({ target: { parentId: 'H', index: 1 } });
+    expect(dropTarget({ x: 80, y: 25 }, nested, strip)).toMatchObject({
+      target: { parentId: 'H', index: 1 },
+    });
   });
 });
 
@@ -104,8 +106,12 @@ describe('dropTarget in gaps and empty space', () => {
 
   it('in the gap between two squares uses the nearest one', () => {
     // gap between A (0..50) and B (60..110): x = 53 is nearer A → after A.
-    expect(dropTarget({ x: 53, y: 25 }, items, strip)).toMatchObject({ target: { parentId: null, index: 1 } });
-    expect(dropTarget({ x: 58, y: 25 }, items, strip)).toMatchObject({ target: { parentId: null, index: 1 } });
+    expect(dropTarget({ x: 53, y: 25 }, items, strip)).toMatchObject({
+      target: { parentId: null, index: 1 },
+    });
+    expect(dropTarget({ x: 58, y: 25 }, items, strip)).toMatchObject({
+      target: { parentId: null, index: 1 },
+    });
   });
 
   it('past the end of a row drops after its last item', () => {
@@ -114,12 +120,16 @@ describe('dropTarget in gaps and empty space', () => {
       indicator: { x: 110, top: 60, bottom: 110 },
     });
     // End of the first row: after C, which is index 3 (before D).
-    expect(dropTarget({ x: 400, y: 25 }, items, strip)).toMatchObject({ target: { parentId: null, index: 3 } });
+    expect(dropTarget({ x: 400, y: 25 }, items, strip)).toMatchObject({
+      target: { parentId: null, index: 3 },
+    });
   });
 
   it('between rows uses the nearest row', () => {
     expect(dropTarget({ x: 5, y: 56 }, items, strip)).toMatchObject({ target: { parentId: null, index: 3 } });
-    expect(dropTarget({ x: 5, y: 150 }, items, strip)).toMatchObject({ target: { parentId: null, index: 3 } });
+    expect(dropTarget({ x: 5, y: 150 }, items, strip)).toMatchObject({
+      target: { parentId: null, index: 3 },
+    });
   });
 
   it('an empty track drops at the root start', () => {
