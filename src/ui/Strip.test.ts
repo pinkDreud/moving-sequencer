@@ -132,6 +132,13 @@ describe('Strip selection', () => {
     expect(selected(app)).toEqual(['b']);
   });
 
+  it('a pen tap toggles the node', () => {
+    const { app, byId } = renderStrip(['a']);
+    fireEvent.pointerDown(byId('b'), { pointerType: 'pen' });
+    fireEvent.click(byId('b'), { detail: 1 });
+    expect(selected(app)).toEqual(['a', 'b']);
+  });
+
   it('forgets the touch pointer type after the click, so a keyboard click replaces', () => {
     const { app, byId } = renderStrip();
     fireEvent.pointerDown(byId('a'), { pointerType: 'touch' });

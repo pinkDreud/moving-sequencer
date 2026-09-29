@@ -55,6 +55,25 @@ test('adds squares from the palette, groups three, ungroups them and deletes the
   await expect(page.getByRole('toolbar', { name: 'Selection' })).toHaveCount(0);
 });
 
+test('all slots have the same width, and a group splits its slot evenly', async ({ page, isMobile }) => {
+  await page.goto('./');
+  for (const [i, target] of [slots(page).nth(0), slots(page).nth(1), slots(page).nth(2)].entries()) {
+    if (isMobile) await target.tap();
+    else await target.click(i === 0 ? {} : { modifiers: ['Shift'] });
+  }
+  await barButton(page, 'Group').click();
+  await expect(slots(page)).toHaveCount(6);
+
+  const widths = await slots(page).evaluateAll((els) => els.map((el) => el.getBoundingClientRect().width));
+  expect(widths[0]).toBeGreaterThanOrEqual(44);
+  for (const w of widths) expect(w).toBeCloseTo(widths[0] ?? 0, 1);
+
+  const children = slots(page).first().locator(':scope > .children > [data-node-id]');
+  const childWidths = await children.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().width));
+  expect(childWidths).toHaveLength(3);
+  for (const w of childWidths) expect(w).toBeCloseTo(childWidths[0] ?? 0, 1);
+});
+
 test('a tap on the empty strip area clears the selection', async ({ page, isMobile }) => {
   await page.goto('./');
   if (isMobile) await slots(page).first().tap();

@@ -86,6 +86,16 @@ describe('Editor', () => {
     expect(app.selection.size).toBe(0);
   });
 
+  it('keyboard shortcuts are ignored with Ctrl, Cmd or Alt held', () => {
+    const app = makeApp('A B', ['A', 'B']);
+    const song = app.song;
+    render(Editor, { app });
+    fireEvent.keyDown(window, { key: 'g', ctrlKey: true });
+    fireEvent.keyDown(window, { key: 'm', metaKey: true });
+    fireEvent.keyDown(window, { key: 'Delete', altKey: true });
+    expect(app.song).toBe(song);
+  });
+
   it('keyboard shortcuts are ignored while typing in a text field', () => {
     const app = makeApp('A B', ['A']);
     render(Editor, { app });
