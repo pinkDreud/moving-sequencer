@@ -17,7 +17,7 @@ playhead lights up.
 - [ ] Palette: one button per sound plus "Silent". A tap appends a square to the end, or inserts it after the last selected node if there is a selection.
 - [ ] Selection: mouse click selects only this node; shift/cmd/ctrl-click toggles it; touch tap toggles it; a tap on the empty strip area clears the selection. Selected squares get `aria-pressed="true"` and a highlight.
 - [ ] SelectionBar (visible when something is selected): Mute/Unmute, Sound (applies the palette sound picked next), Group (enabled when ≥ 2 siblings are selected), Ungroup (enabled when a group is selected), Delete. Each calls the pure op from `core/ops.ts`.
-- [ ] Playhead: while playing, the leaf at `scheduler.positionAt(engine.now())` gets a `playing` class (rAF loop, stopped when transport stops).
+- [ ] Playhead: the leaf whose id equals `app.playheadId` gets a `playing` class. Feature 06 keeps `playheadId` up to date; 07 only renders it.
 - [ ] Default pattern on first load: 8 slots of a simple beat (kick, hat, snare, hat…).
 - [ ] Every square has an `aria-label`: sound name, "silent", plus ", muted" when muted.
 - [ ] Component tests (Testing Library) for rendering and selection. e2e: add squares from the palette, group three of them, ungroup, delete.
