@@ -21,6 +21,8 @@
   const builtIn = $derived(sounds.filter((s) => s.source !== 'recording'));
   const recorded = $derived(sounds.filter((s) => s.source === 'recording'));
 
+  let recordButtonEl: HTMLButtonElement | undefined = $state();
+
   /** Recording whose delete button was pressed once and now asks for confirmation. */
   let confirming: SoundId | null = $state(null);
 
@@ -38,6 +40,8 @@
     }
     confirming = null;
     recording?.remove(sound.id);
+    // The focused button is going away; keep keyboard and screen-reader users in the palette.
+    recordButtonEl?.focus();
   }
 </script>
 
@@ -46,17 +50,22 @@
 {#snippet recordButton(control: RecordControl)}
   {@const active = control.status === 'recording'}
   <button
+    bind:this={recordButtonEl}
     type="button"
     class="sound record"
     class:active
     disabled={control.disabled}
-    aria-label={active ? 'Stop recording' : undefined}
+    aria-label={active ? 'Stop recording' : control.status === 'starting' ? 'Cancel recording' : undefined}
     aria-describedby={control.hint ? `${id}-hint` : undefined}
     onclick={() => void control.toggle()}
   >
     <span class="swatch"></span>
     {#if active}
       Stop <span class="time">{control.elapsed.toFixed(1)} s</span>
+    {:else if control.status === 'starting'}
+      Cancel
+    {:else if control.status === 'processing'}
+      Saving…
     {:else}
       Record
     {/if}
@@ -144,8 +153,9 @@
     color: #ff8a8a;
   }
 
+  /* The live region must stay rendered (not display: none) or screen readers may not announce its message. */
   .note:empty {
-    display: none;
+    margin: 0;
   }
 
   .sound {

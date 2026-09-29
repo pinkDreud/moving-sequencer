@@ -63,7 +63,14 @@ export function fadeOut(samples: Float32Array, sampleRate: number, seconds = 0.0
   return samples.map((x, i) => x * Math.min(1, (last - i) / fade));
 }
 
-/** The whole chain for a fresh recording: mono, leading silence trimmed, normalized, faded out. */
+/** Linear fade from 0 over the first `seconds`: the trim cuts right at the onset, which would click. */
+export function fadeIn(samples: Float32Array, sampleRate: number, seconds = 0.002): Float32Array {
+  const fade = Math.max(1, Math.round(seconds * sampleRate));
+  return samples.map((x, i) => x * Math.min(1, i / fade));
+}
+
+/** The whole chain for a fresh recording: mono, leading silence trimmed, normalized, faded in and out. */
 export function processRecording(channels: readonly Float32Array[], sampleRate: number): Float32Array {
-  return fadeOut(normalizePeak(trimLeadingSilence(mixToMono(channels), sampleRate)), sampleRate);
+  const trimmed = normalizePeak(trimLeadingSilence(mixToMono(channels), sampleRate));
+  return fadeOut(fadeIn(trimmed, sampleRate), sampleRate);
 }

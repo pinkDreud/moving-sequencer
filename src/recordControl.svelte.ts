@@ -51,6 +51,9 @@ export class RecordControl {
   message: string | null = $state(null);
   readonly availability: MicAvailability;
   private session: Recording | undefined;
+  private stopRequested = false;
+  /** Bumped by every start and cancel, so a start that resolves after a cancel knows it is stale. */
+  private generation = 0;
 
   constructor(private readonly deps: RecordControlDeps) {
     this.availability = deps.availability;
@@ -62,27 +65,45 @@ export class RecordControl {
   }
 
   get disabled(): boolean {
-    return this.availability !== 'ok' || this.status === 'starting' || this.status === 'processing';
+    return this.availability !== 'ok' || this.status === 'processing';
   }
 
-  /** Record, or Stop while recording. Resolves when the whole recording has been handled. */
+  /**
+   * Record; Cancel while waiting for the mic (a permission prompt may never be answered); Stop while recording.
+   * Resolves when the whole recording has been handled.
+   */
   async toggle(): Promise<void> {
     if (this.status === 'recording') {
-      this.session?.stop();
+      if (!this.stopRequested) this.session?.stop();
+      this.stopRequested = true;
+      return;
+    }
+    if (this.status === 'starting') {
+      this.generation++;
+      this.status = 'idle';
       return;
     }
     if (this.disabled) return;
+    const generation = ++this.generation;
     this.message = null;
     this.status = 'starting';
     let session: Recording;
     try {
       session = await this.deps.start();
     } catch (error) {
+      if (generation !== this.generation) return;
       this.message = START_MESSAGES[error instanceof MicError ? error.reason : 'failed'];
       this.status = 'idle';
       return;
     }
+    if (generation !== this.generation) {
+      // Cancelled while the mic was opening: close it again and drop whatever it recorded.
+      session.stop();
+      session.result.catch(() => {});
+      return;
+    }
     this.session = session;
+    this.stopRequested = false;
     this.status = 'recording';
     const stopTicking = this.countElapsed();
     try {

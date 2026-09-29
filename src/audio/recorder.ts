@@ -5,6 +5,9 @@ import { processRecording } from './sampleOps';
 /** Recordings stop by themselves after this long. */
 export const MAX_RECORDING_SECONDS = 4;
 
+/** How long a stopped recorder may take to deliver its data before we give up. */
+const STOP_WATCHDOG_MS = 2000;
+
 export type MicAvailability = 'ok' | 'insecure' | 'unsupported';
 
 /** Whether recording can work here. Browsers hide `mediaDevices` outside secure contexts (plain-HTTP LAN). */
@@ -106,29 +109,43 @@ export async function startRecording<S extends MediaStreamLike>(
     throw new MicError(reasonOf(error), { cause: error });
   }
 
+  const chunks: Blob[] = [];
+  let settle: { resolve(blob: Blob): void; reject(error: unknown): void } | undefined;
+  const result = new Promise<Blob>((resolve, reject) => (settle = { resolve, reject }));
   let recorder: MediaRecorderLike | undefined;
   /** Stopped by the user, the time limit or an error: later stops do nothing. */
   let stopped = false;
-  const stop = () => {
-    if (stopped) return;
-    stopped = true;
-    timer.clearTimeout(autoStop);
-    recorder?.stop();
-  };
-  const autoStop = timer.setTimeout(stop, maxSeconds * 1000);
+  let watchdog: unknown;
   let released = false;
   const release = () => {
     if (released) return;
     released = true;
     stopped = true;
     timer.clearTimeout(autoStop);
+    timer.clearTimeout(watchdog);
     for (const track of stream.getTracks()) track.stop();
     restoreSession();
   };
+  const fail = (error: unknown) => {
+    release();
+    settle?.reject(new MicError('failed', { cause: error }));
+  };
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    timer.clearTimeout(autoStop);
+    try {
+      recorder?.stop();
+    } catch (error) {
+      // Older Safari throws InvalidStateError when the recorder already went inactive.
+      fail(error);
+      return;
+    }
+    // Never leave the mic open and the button on "Stop" if the browser does not confirm the stop.
+    watchdog = timer.setTimeout(() => fail(new Error('the recorder did not stop')), STOP_WATCHDOG_MS);
+  };
+  const autoStop = timer.setTimeout(stop, maxSeconds * 1000);
 
-  const chunks: Blob[] = [];
-  let settle: { resolve(blob: Blob): void; reject(error: unknown): void } | undefined;
-  const result = new Promise<Blob>((resolve, reject) => (settle = { resolve, reject }));
   try {
     const created = deps.createRecorder(stream, {
       ondata: (blob) => {
@@ -138,10 +155,7 @@ export async function startRecording<S extends MediaStreamLike>(
         release();
         settle?.resolve(new Blob(chunks, { type: created.mimeType || chunks[0]?.type || '' }));
       },
-      onerror: (error) => {
-        release();
-        settle?.reject(new MicError('failed', { cause: error }));
-      },
+      onerror: fail,
     });
     created.start();
     recorder = created;
