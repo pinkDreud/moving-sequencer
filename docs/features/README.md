@@ -19,6 +19,7 @@ Each feature has a doc `NN-slug.md` using the template below. Status: `planned` 
 | 12  | [Half / double tempo](12-tempo-multiplier.md)           | done   |
 | 13  | [Swing](13-swing.md)                                    | done   |
 | 14  | [Preparation area](14-prep-area.md)                     | done   |
+| 15  | [Editing keys](15-editing-keys.md)                      | done   |
 
 ## Template
 

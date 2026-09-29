@@ -201,7 +201,7 @@ test('Group, Mute and Delete work on a prep selection; a mixed selection cannot 
   await load(page, [sq('kick')], [sq('clap'), sq('rim'), sq('hat')]);
   const pick = async (target: Locator, first: boolean) => {
     if (isMobile) await target.tap();
-    else await target.click(first ? {} : { modifiers: ['Shift'] });
+    else await target.click(first ? {} : { modifiers: ['ControlOrMeta'] });
   };
   await pick(inPrep(page, 'clap'), true);
   await pick(inPrep(page, 'rim'), false);
@@ -214,7 +214,7 @@ test('Group, Mute and Delete work on a prep selection; a mixed selection cannot 
   if (isMobile) await expect(page.getByRole('toolbar', { name: 'Selection' })).toContainText('2 selected');
   await pick(inPattern(page, 'kick'), false);
   await expect(barButton(page, 'Group')).toBeDisabled();
-  await barButton(page, 'Delete').click();
+  await barButton(page, 'Remove').click();
   await expect.poll(() => shape(pattern(page))).toBe('');
   if (!isMobile) await expect.poll(() => shape(prep(page))).toMatch(/^\w+\[clap rim\]$/);
 });

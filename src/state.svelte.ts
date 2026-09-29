@@ -103,6 +103,9 @@ export class AppState {
     }
   }
 
+  /** Where Shift+click ranges start: the last node clicked without Shift. Not reactive: nothing renders it. */
+  anchor: NodeId | null = null;
+
   select(ids: Iterable<NodeId>): void {
     this.selection = new Set(ids);
   }

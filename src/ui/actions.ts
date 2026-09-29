@@ -2,7 +2,17 @@
 // nodes of both areas (pattern and prep): ids are unique app-wide, and an op ignores ids that are not in its track.
 import type { Area } from '../core/dropTarget';
 import { square, type NodeId, type SoundId, type Track } from '../core/model';
-import { findNode, groupOrJoin, insert, remove, setSound, toggleMute } from '../core/ops';
+import {
+  emptySquares,
+  findLocation,
+  findNode,
+  groupOrJoin,
+  insert,
+  nodeIds,
+  remove,
+  setSound,
+  toggleMute,
+} from '../core/ops';
 import type { AppState } from '../state.svelte';
 import { selectedGroupIds, ungroupAll } from './selection';
 import type { Shortcut } from './shortcuts';
@@ -41,6 +51,29 @@ export function pickSound(app: AppState, soundId: SoundId | null): void {
     );
 }
 
+/** Delete key / Empty: the selected squares become empty slots; the pattern keeps its length and the selection. */
+export function emptySelection(app: AppState): void {
+  const ids = [...app.selection];
+  updateBoth(app, (t) => emptySquares(t, ids));
+}
+
+/** Ins: an empty slot before the first selected node (inside its group), or at the end of the active area. */
+export function insertEmpty(app: AppState): void {
+  for (const area of AREAS) {
+    const track = app.trackOf(area);
+    const first = nodeIds(track).find((id) => app.selection.has(id));
+    const at = first === undefined ? undefined : findLocation(track, first);
+    if (at) {
+      app.updateArea(area, (t) => insert(t, at, square(app.nextId(), null)));
+      return;
+    }
+  }
+  app.updateArea(app.activeArea, (t) =>
+    insert(t, { parentId: null, index: t.nodes.length }, square(app.nextId(), null)),
+  );
+}
+
+/** Remove (Shift+Delete, selection bar): the selected nodes are taken out and the pattern gets shorter. */
 export function deleteSelection(app: AppState): void {
   const ids = [...app.selection];
   updateBoth(app, (t) => remove(t, ids));
@@ -89,8 +122,12 @@ export function ungroupSelection(app: AppState): void {
 
 export function runShortcut(app: AppState, shortcut: Shortcut): void {
   switch (shortcut) {
-    case 'delete':
+    case 'empty':
+      return emptySelection(app);
+    case 'remove':
       return deleteSelection(app);
+    case 'insert':
+      return insertEmpty(app);
     case 'mute':
       return toggleMuteSelection(app);
     case 'group':

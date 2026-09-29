@@ -1,4 +1,4 @@
-export type Shortcut = 'delete' | 'mute' | 'group' | 'ungroup' | 'clear';
+export type Shortcut = 'empty' | 'remove' | 'insert' | 'mute' | 'group' | 'ungroup' | 'clear';
 
 export interface KeyLike {
   key: string;
@@ -19,7 +19,12 @@ export function shortcutFor(e: KeyLike): Shortcut | null {
   switch (e.key) {
     case 'Delete':
     case 'Backspace':
-      return 'delete';
+      return e.shiftKey ? 'remove' : 'empty';
+    // Mac keyboards have no Insert key.
+    case 'Insert':
+    case 'i':
+    case 'I':
+      return 'insert';
     case 'm':
     case 'M':
       return 'mute';

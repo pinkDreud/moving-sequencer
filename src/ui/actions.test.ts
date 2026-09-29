@@ -4,7 +4,9 @@ import { shape } from '../core/test-helpers';
 import type { AppState } from '../state.svelte';
 import {
   deleteSelection,
+  emptySelection,
   groupSelection,
+  insertEmpty,
   pickSound,
   runShortcut,
   toggleMuteSelection,
@@ -57,6 +59,38 @@ describe('pickSound', () => {
     const app = makeApp('A B', ['A']);
     pickSound(app, null);
     expect(findNode(app.track, 'A')).toMatchObject({ soundId: null });
+  });
+});
+
+describe('empty / insert actions', () => {
+  it('emptySelection makes the selected squares silent and keeps the selection', () => {
+    const app = makeApp('A G[B C] D', ['A', 'G']);
+    emptySelection(app);
+    expect(shape(app.track)).toBe('A G[B C] D');
+    for (const id of ['A', 'B', 'C']) expect(findNode(app.track, id)).toMatchObject({ soundId: null });
+    expect(selected(app)).toEqual(['A', 'G']);
+  });
+
+  it('insertEmpty puts a silent square before the first selected node, inside its group', () => {
+    const app = makeApp('A G[B C] D', ['C', 'D']);
+    insertEmpty(app);
+    expect(shape(app.track)).toBe('A G[B n1 C] D');
+    expect(selected(app)).toEqual(['C', 'D']);
+  });
+
+  it('insertEmpty with nothing selected appends to the active area', () => {
+    const app = makeApp('A', [], 'P');
+    insertEmpty(app);
+    expect(shape(app.track)).toBe('A n1');
+    app.activeArea = 'prep';
+    insertEmpty(app);
+    expect(shape(app.prep)).toBe('P n2');
+  });
+
+  it('insertEmpty before a selected square in the prep area inserts there', () => {
+    const app = makeApp('A', ['Q'], 'P Q');
+    insertEmpty(app);
+    expect(shape(app.prep)).toBe('P n1 Q');
   });
 });
 
@@ -188,8 +222,12 @@ describe('runShortcut', () => {
     expect(shape(app.track)).toBe('n1[A B] C');
     runShortcut(app, 'ungroup');
     expect(shape(app.track)).toBe('A B C');
-    runShortcut(app, 'delete');
-    expect(shape(app.track)).toBe('C');
+    runShortcut(app, 'empty');
+    expect(findNode(app.track, 'A')).toMatchObject({ soundId: null });
+    runShortcut(app, 'insert');
+    expect(shape(app.track)).toBe('n2 A B C');
+    runShortcut(app, 'remove');
+    expect(shape(app.track)).toBe('n2 C');
     app.select(['C']);
     runShortcut(app, 'clear');
     expect(app.selection.size).toBe(0);

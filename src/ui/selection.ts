@@ -1,8 +1,8 @@
 // Pure selection helpers used by the strip, the palette and the selection bar.
 import type { NodeId, SeqNode, Square, Track } from '../core/model';
-import { findNode, groupOrJoin, nodeIds, ungroup } from '../core/ops';
+import { findLocation, findNode, groupOrJoin, nodeIds, ungroup } from '../core/ops';
 
-export type SelectMode = 'replace' | 'toggle';
+export type SelectMode = 'replace' | 'toggle' | 'range';
 
 export interface PointerLike {
   pointerType: string;
@@ -11,10 +11,40 @@ export interface PointerLike {
   ctrlKey: boolean;
 }
 
-/** Mouse/keyboard click replaces the selection; a modifier, or a touch/pen tap (no modifier keys there), toggles. */
+/**
+ * A plain mouse/keyboard click replaces the selection; Shift selects a range; Ctrl/Cmd, or a touch/pen tap (no
+ * modifier keys there), toggles.
+ */
 export function selectMode(e: PointerLike): SelectMode {
-  const tap = e.pointerType === 'touch' || e.pointerType === 'pen';
-  return tap || e.shiftKey || e.metaKey || e.ctrlKey ? 'toggle' : 'replace';
+  if (e.pointerType === 'touch' || e.pointerType === 'pen') return 'toggle';
+  if (e.shiftKey) return 'range';
+  return e.metaKey || e.ctrlKey ? 'toggle' : 'replace';
+}
+
+/**
+ * What Shift+click selects, from `anchor` (the last plain or Ctrl/Cmd click) to `target`. Siblings: the nodes
+ * between them (a group stays one block). Different levels: every square between them, in time order.
+ */
+export function rangeIds(track: Track, anchor: NodeId, target: NodeId): NodeId[] {
+  const from = findLocation(track, anchor);
+  const to = findLocation(track, target);
+  if (!from || !to) return [target];
+  if (from.parentId === to.parentId) {
+    const parent = from.parentId === null ? undefined : findNode(track, from.parentId);
+    const siblings = parent?.kind === 'group' ? parent.children : track.nodes;
+    const [lo, hi] = from.index < to.index ? [from.index, to.index] : [to.index, from.index];
+    return siblings.slice(lo, hi + 1).map((n) => n.id);
+  }
+  const squares = nodeIds(track).filter((id) => findNode(track, id)?.kind === 'square');
+  const span = [anchor, target].flatMap((id) => {
+    const node = findNode(track, id);
+    return node ? squaresIn(node).map((s) => squares.indexOf(s.id)) : [];
+  });
+  return squares.slice(Math.min(...span), Math.max(...span) + 1);
+}
+
+function squaresIn(node: SeqNode): Square[] {
+  return node.kind === 'square' ? [node] : node.children.flatMap(squaresIn);
 }
 
 /** True when the Group button would create or join a group with this selection. */

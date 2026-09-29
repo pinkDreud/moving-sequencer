@@ -52,7 +52,7 @@ describe('Editor', () => {
     expect(findNode(app.track, 'B')).toMatchObject({ soundId: 'kick' });
   });
 
-  it('keyboard: Delete, M, G, Shift+G and Escape act on the selection', () => {
+  it('keyboard: M, G, Shift+G, Delete, Shift+Delete and Escape act on the selection', () => {
     const app = makeApp('A B C D', ['A', 'B']);
     render(Editor, { app });
     fireEvent.keyDown(window, { key: 'm' });
@@ -61,14 +61,30 @@ describe('Editor', () => {
     expect(shape(app.track)).toBe('n1[A B] C D');
     fireEvent.keyDown(window, { key: 'G', shiftKey: true });
     expect(shape(app.track)).toBe('A B C D');
+    // Delete empties: same length, silent squares, selection kept.
     fireEvent.keyDown(window, { key: 'Delete' });
+    expect(shape(app.track)).toBe('A B C D');
+    expect(findNode(app.track, 'A')).toMatchObject({ soundId: null, muted: false });
+    expect(findNode(app.track, 'B')).toMatchObject({ soundId: null });
+    expect([...app.selection].sort()).toEqual(['A', 'B']);
+    // Shift+Delete removes.
+    fireEvent.keyDown(window, { key: 'Delete', shiftKey: true });
     expect(shape(app.track)).toBe('C D');
-    app.select(['C']);
-    fireEvent.keyDown(window, { key: 'Backspace' });
-    expect(shape(app.track)).toBe('D');
     app.select(['D']);
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(app.selection.size).toBe(0);
+  });
+
+  it('Ins inserts an empty slot before the selection (or at the end without one)', () => {
+    const app = makeApp('A B C', ['B']);
+    render(Editor, { app });
+    fireEvent.keyDown(window, { key: 'Insert' });
+    expect(shape(app.track)).toBe('A n1 B C');
+    expect(findNode(app.track, 'n1')).toMatchObject({ soundId: null });
+    expect([...app.selection]).toEqual(['B']);
+    app.clearSelection();
+    fireEvent.keyDown(window, { key: 'i' });
+    expect(shape(app.track)).toBe('A n1 B C n2');
   });
 
   it('keyboard shortcuts are ignored with Ctrl, Cmd or Alt held', () => {
@@ -130,6 +146,9 @@ describe('Editor', () => {
     fireEvent.keyDown(window, { key: 'g' });
     expect(shape(app.prep)).toBe('n1[P Q] R');
     fireEvent.keyDown(window, { key: 'Delete' });
+    expect(shape(app.prep)).toBe('n1[P Q] R');
+    expect(findNode(app.prep, 'P')).toMatchObject({ soundId: null });
+    fireEvent.keyDown(window, { key: 'Delete', shiftKey: true });
     expect(shape(app.prep)).toBe('R');
   });
 

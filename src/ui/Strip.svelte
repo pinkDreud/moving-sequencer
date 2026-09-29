@@ -5,7 +5,8 @@
   import type { Gesture } from './drag';
   import type { Pickup } from './dragDrop';
   import NodeView from './NodeView.svelte';
-  import { selectMode } from './selection';
+  import { rangeIds, selectMode } from './selection';
+  import { findNode } from '../core/ops';
 
   // A view of one area's track. The drag gesture spans both strips, so it is owned by the Editor and passed in;
   // without it the strip only selects.
@@ -62,8 +63,13 @@
       return;
     }
     const mode = selectMode({ pointerType, shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey });
+    if (mode === 'range' && app.anchor !== null && findNode(track, app.anchor)) {
+      app.select(rangeIds(track, app.anchor, id));
+      return;
+    }
     if (mode === 'toggle') app.toggle(id);
     else app.select([id]);
+    app.anchor = id;
   }
 </script>
 

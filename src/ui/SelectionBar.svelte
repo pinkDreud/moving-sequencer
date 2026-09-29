@@ -3,6 +3,7 @@
   import {
     bothAreas,
     deleteSelection,
+    emptySelection,
     groupSelection,
     selectionArea,
     toggleMuteSelection,
@@ -27,7 +28,8 @@
     <button type="button" onclick={() => toggleMuteSelection(app)}>{muted ? 'Unmute' : 'Mute'}</button>
     <button type="button" disabled={!groupable} onclick={() => groupSelection(app)}>Group</button>
     <button type="button" disabled={!hasGroup} onclick={() => ungroupSelection(app)}>Ungroup</button>
-    <button type="button" class="danger" onclick={() => deleteSelection(app)}>Delete</button>
+    <button type="button" onclick={() => emptySelection(app)}>Empty</button>
+    <button type="button" class="danger" onclick={() => deleteSelection(app)}>Remove</button>
     <button type="button" class="clear" aria-label="Clear selection" onclick={() => app.clearSelection()}>
       ×
     </button>

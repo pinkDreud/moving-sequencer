@@ -27,7 +27,8 @@
 
   function onkeydown(e: KeyboardEvent) {
     const shortcut = shortcutFor(e);
-    if (shortcut === null || app.selection.size === 0) return;
+    // Without a selection only Ins does something (it appends); other keys keep their browser default.
+    if (shortcut === null || (app.selection.size === 0 && shortcut !== 'insert')) return;
     e.preventDefault();
     runShortcut(app, shortcut);
   }

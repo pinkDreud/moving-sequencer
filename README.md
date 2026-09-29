@@ -7,9 +7,10 @@ slot (triplets, quintuplets, …) and ungroup them to spread them back out.
 **Play**: Play/Stop (or Space), BPM, speed (½× / 1× / 2×, BPM unchanged), swing (0–75 %: every second slot is delayed, and groups swing along), and what one slot is worth (1/4, 1/8, 1/16).
 
 **Editing**: tap a sound in the palette to add a square at the end, or, with squares selected, to give them that
-sound. Click a square to
-select it; Shift/Cmd/Ctrl-click adds to the selection (on a phone every tap toggles). Group with a group (or a square inside one) plus squares next to it adds them to that group. The selection bar mutes, groups, ungroups or deletes. Keys: Delete/Backspace, M (mute), G (group), Shift+G (ungroup),
-Escape (clear selection).
+sound. Click a square to select it; Ctrl/Cmd-click adds or removes one, Shift-click selects everything from the last clicked
+square (on a phone every tap toggles). Group with a group (or a square inside one) plus squares next to it adds them to that group. The selection bar mutes, groups, ungroups, empties or removes. Keys: Delete/Backspace empties the squares (they stay,
+silent), Shift+Delete removes them, Ins or I inserts an empty slot before the selection, M (mute), G (group),
+Shift+G (ungroup), Escape (clear selection).
 
 **Moving**: drag a square with the mouse, or long-press it on a phone and then move your finger. The yellow line
 shows where it lands, which can be between squares, inside a group, or out of a group. Dragging a selected square
