@@ -3,11 +3,12 @@
   import type { AppState } from '../state.svelte';
   import { pickSound, runShortcut } from './actions';
   import Palette from './Palette.svelte';
+  import type { RecordControl } from './recordControl.svelte';
   import SelectionBar from './SelectionBar.svelte';
   import { shortcutFor } from './shortcuts';
   import Strip from './Strip.svelte';
 
-  let { app }: { app: AppState } = $props();
+  let { app, recording }: { app: AppState; recording?: RecordControl } = $props();
 
   let soundMode = $state(false);
 
@@ -33,6 +34,6 @@
 
 <div class="editor">
   <Strip {app} />
-  <Palette sounds={app.sounds} {onpick} armed={soundMode} />
+  <Palette sounds={app.sounds} {onpick} armed={soundMode} {recording} />
   <SelectionBar {app} bind:soundMode />
 </div>

@@ -8,11 +8,27 @@ export interface AudioEngine {
   stopAll(): void;
 }
 
+/** Where decoded sounds go (recordings are added and removed at run time). */
+export interface SoundLoader {
+  load(soundId: SoundId, buffer: AudioBuffer): void;
+  unload(soundId: SoundId): void;
+}
+
 /** Test double (unit tests, `?fake-audio` e2e): manual clock, records what would have played. */
-export class FakeEngine implements AudioEngine {
+export class FakeEngine implements AudioEngine, SoundLoader {
   time = 0;
   log: { soundId: SoundId; when: number }[] = [];
   stopAllCount = 0;
+  /** Buffers loaded so far (the e2e reads recordings back from here). */
+  readonly loaded = new Map<SoundId, AudioBuffer>();
+
+  load(soundId: SoundId, buffer: AudioBuffer): void {
+    this.loaded.set(soundId, buffer);
+  }
+
+  unload(soundId: SoundId): void {
+    this.loaded.delete(soundId);
+  }
 
   now(): number {
     return this.time;
@@ -50,7 +66,7 @@ export class RealtimeFakeEngine extends FakeEngine {
 const MASTER_GAIN = 0.8;
 
 /** The real engine: plays loaded buffers on one `AudioContext`. */
-export class WebAudioEngine implements AudioEngine {
+export class WebAudioEngine implements AudioEngine, SoundLoader {
   private readonly master: GainNode;
   private readonly buffers = new Map<SoundId, AudioBuffer>();
   /** Sources started (possibly in the future) and not ended yet, so `stopAll` can cancel them. */
@@ -64,6 +80,10 @@ export class WebAudioEngine implements AudioEngine {
 
   load(soundId: SoundId, buffer: AudioBuffer): void {
     this.buffers.set(soundId, buffer);
+  }
+
+  unload(soundId: SoundId): void {
+    this.buffers.delete(soundId);
   }
 
   /** Resumes a suspended (or iOS-interrupted) context; the first call must happen inside a user gesture. */

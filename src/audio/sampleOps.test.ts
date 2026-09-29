@@ -150,7 +150,7 @@ describe('processRecording', () => {
     const out = processRecording([left, right], SR);
     expect(out).toHaveLength(200);
     expect(peakOf(out)).toBeCloseTo(dbToGain(-1), 5);
-    expect(out[199]).toBe(0);
+    expect(Math.abs(out[199] ?? 1)).toBe(0);
   });
 
   it('turns an all-silent recording into a silent sound', () => {

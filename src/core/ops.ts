@@ -144,6 +144,16 @@ export function setSound(track: Track, ids: readonly NodeId[], soundId: SoundId 
   );
 }
 
+/** Turns every square playing `soundId` into a plain (unmuted) silent square, e.g. when that sound is deleted. */
+export function clearSound(track: Track, soundId: SoundId): Track {
+  return withNodes(
+    track,
+    rewrite(track.nodes, (n) => [
+      n.kind === 'square' && n.soundId === soundId ? { ...n, soundId: null, muted: false } : n,
+    ]),
+  );
+}
+
 /** Unmutes the targeted squares if all are muted, else mutes them all (a group id targets its squares). */
 export function toggleMute(track: Track, ids: readonly NodeId[]): Track {
   const targets = targetedSquares(track, ids);

@@ -79,9 +79,14 @@ describe('Palette', () => {
       expect(screen.getByRole('status')).toHaveTextContent('Microphone permission denied');
     });
 
-    it('lists recordings after the kit; they can be picked like any sound', () => {
+    it('lists recordings after the kit and Silent, then Record; they can be picked like any sound', () => {
       const onpick = vi.fn();
       render(Palette, { sounds: [...KIT, rec], onpick, recording: fakeRecordDeps().control });
+      const palette = screen.getByRole('group', { name: 'Sounds' });
+      const names = [...palette.querySelectorAll('button')].map(
+        (b) => b.getAttribute('aria-label') ?? b.textContent?.trim(),
+      );
+      expect(names).toEqual([...KIT.map((s) => s.name), 'Silent', 'Rec 1', 'Delete Rec 1', 'Record']);
       fireEvent.click(screen.getByRole('button', { name: 'Rec 1' }));
       expect(onpick).toHaveBeenCalledWith('rec-a');
     });
