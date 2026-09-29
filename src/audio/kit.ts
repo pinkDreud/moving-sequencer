@@ -29,7 +29,8 @@ function biquad(
   q: number,
   sampleRate: number,
 ): (x: number) => number {
-  const w0 = (TAU * frequency) / sampleRate;
+  // At or above Nyquist the coefficients make the filter unstable (low-rate contexts, e.g. 8 kHz headsets).
+  const w0 = (TAU * Math.min(frequency, 0.45 * sampleRate)) / sampleRate;
   const cos = Math.cos(w0);
   const alpha = Math.sin(w0) / (2 * q);
   const [b0, b1, b2] = type === 'highpass' ? [(1 + cos) / 2, -(1 + cos), (1 + cos) / 2] : [alpha, 0, -alpha];
