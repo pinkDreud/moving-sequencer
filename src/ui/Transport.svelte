@@ -148,4 +148,13 @@
   .bpm {
     width: 5.5em;
   }
+
+  /* Safari ignores the height of a natively styled select; draw our own arrow instead. */
+  select {
+    appearance: none;
+    padding-right: 28px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238a8aa0' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
 </style>
