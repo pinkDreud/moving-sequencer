@@ -1,9 +1,13 @@
 <script lang="ts">
-  import type { SeqNode } from '../core/model';
+  import type { NodeId, SeqNode } from '../core/model';
   import type { AppState } from '../state.svelte';
   import NodeView from './NodeView.svelte';
 
-  let { node, app }: { node: SeqNode; app: AppState } = $props();
+  let {
+    node,
+    app,
+    dragging = new Set(),
+  }: { node: SeqNode; app: AppState; dragging?: ReadonlySet<NodeId> } = $props();
 
   const selected = $derived(app.selection.has(node.id));
 
@@ -25,6 +29,7 @@
     class:silent={node.soundId === null}
     class:muted={node.muted}
     class:selected
+    class:dragging={dragging.has(node.id)}
     class:playing={app.playheadId === node.id}
     data-node-id={node.id}
     aria-label={labelOf(node.soundId, node.muted)}
@@ -32,13 +37,13 @@
     style:--color={soundOf(node.soundId)?.color}
   ></button>
 {:else}
-  <div class="group" class:selected data-node-id={node.id}>
+  <div class="group" class:selected class:dragging={dragging.has(node.id)} data-node-id={node.id}>
     <!-- The frame sits behind the children and shows as the group's padding: tapping it selects the group. -->
     <button type="button" class="frame" aria-label="Group of {node.children.length}" aria-pressed={selected}
     ></button>
     <div class="children">
       {#each node.children as child (child.id)}
-        <NodeView node={child} {app} />
+        <NodeView node={child} {app} {dragging} />
       {/each}
     </div>
   </div>
@@ -94,6 +99,11 @@
   .square.selected:focus-visible {
     outline-color: var(--accent);
     outline-width: 4px;
+  }
+
+  /* Picked up: stays in place (drop positions count it) but fades. */
+  .dragging {
+    opacity: 0.35;
   }
 
   .group {
