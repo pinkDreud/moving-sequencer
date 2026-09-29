@@ -15,9 +15,8 @@ const pointer = (
 });
 
 describe('selectMode', () => {
-  it('replaces the selection on a plain mouse, pen or keyboard click', () => {
+  it('replaces the selection on a plain mouse or keyboard click', () => {
     expect(selectMode(pointer('mouse'))).toBe('replace');
-    expect(selectMode(pointer('pen'))).toBe('replace');
     expect(selectMode(pointer(''))).toBe('replace');
   });
 
@@ -29,6 +28,10 @@ describe('selectMode', () => {
 
   it('toggles on a touch tap', () => {
     expect(selectMode(pointer('touch'))).toBe('toggle');
+  });
+
+  it('toggles on a pen tap, since a tablet has no modifier keys', () => {
+    expect(selectMode(pointer('pen'))).toBe('toggle');
   });
 });
 
