@@ -68,3 +68,18 @@ test('BPM is clamped on commit and the slot value can be changed', async ({ page
   await page.getByRole('combobox', { name: 'Slot value' }).selectOption('1/16');
   expect(await page.evaluate(() => window.__seqTest?.app.song.slotValue)).toBe(16);
 });
+
+test('transport controls are touch-sized and fit a 360 px wide screen', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  const controls = [
+    page.getByRole('button', { name: 'Play' }),
+    page.getByRole('spinbutton', { name: 'BPM' }),
+    page.getByRole('combobox', { name: 'Slot value' }),
+  ];
+  for (const control of controls) {
+    const box = await control.boundingBox();
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+    expect((box?.x ?? Infinity) + (box?.width ?? 0)).toBeLessThanOrEqual(360);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+});
