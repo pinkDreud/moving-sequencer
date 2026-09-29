@@ -19,5 +19,9 @@ export default ts.config(
   {
     files: ['**/*.svelte', '**/*.svelte.ts'],
     languageOptions: { parserOptions: { parser: ts.parser, extraFileExtensions: ['.svelte'], svelteConfig } },
+    rules: {
+      // State is immutable values in $state.raw, replaced on change (see AGENTS.md), never mutated in place.
+      'svelte/prefer-svelte-reactivity': 'off',
+    },
   },
 );

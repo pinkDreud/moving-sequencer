@@ -17,6 +17,7 @@ start/stop the loop and change BPM and slot value, and changes are heard immedia
 - [ ] The kit has 8 sounds: kick, snare, hat, clap, rim, tone-low, tone-mid, tone-high. Each has an id, a name and a color. Each renders into a non-silent mono buffer ≤ 1 s. Rendering uses `OfflineAudioContext`, and the render functions are unit-testable with a fake context.
 - [ ] Transport: Play/Stop toggle button (`aria-pressed`), BPM input (30–300, clamped), slot value selector (1/4, 1/8, 1/16).
 - [ ] Changing BPM or slot value while playing takes effect from the next scheduled event (the scheduler reads the song on every tick).
+- [ ] Playhead: while playing, a `requestAnimationFrame` loop sets `app.playheadId = leafAt(timeline, scheduler.positionAt(engine.now()))?.nodeId ?? null`. It stops and resets to `null` on stop. `app.playing` mirrors the transport.
 - [ ] `?fake-audio` URL param swaps in `FakeEngine` and exposes `window.__seqTest = { engine, state }` for e2e.
 - [ ] e2e: with `?fake-audio`, pressing Play schedules the kit sounds of the default pattern in order.
 
