@@ -4,9 +4,11 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Current state
 
-- **Phase:** 00–08 and 11 done (389 unit, 99 e2e tests). 09 mic recording → 10 autosave are running in one
-  worktree agent (`feat/09-mic-recording`, then `feat/10-autosave` branched from it).
-- **Next step:** review and merge 09 and 10. v1 is then complete; next come a real-device check (sound, iOS touch,
+- **Phase:** v1 complete. Features 00–11 are done and merged (570 unit, 134 e2e tests).
+- **Next step:** real-device checks by the user (listed below), then decide what's next: deployment (a public repo
+  for Pages, or Cloudflare/Netlify), multi-track, undo/redo, lasso selection, export/import.
+- **Real-device checks pending:** how the kit sounds; iOS long-press drag; mic recording over `npm run dev:https`
+  (trim/normalize, speaker vs earpiece after recording on iOS); autosave surviving tab close on iOS; private mode.
   mic over `dev:https`) and a decision about deployment/multi-track.
   a real device and try touch drag on iOS.
 - **Blockers:** none. No deployment: Pages is unavailable for a private repo on the free plan, and the user chose "no deploy for now".
@@ -22,6 +24,18 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-29 — 09 mic recording + 10 autosave merged (v1 complete)
+
+- 09: `audio/sampleOps.ts` (pure trim/normalize/fades), `audio/recorder.ts`, `audio/recordings.ts`,
+  `src/recordControl.svelte.ts`, the Record control and delete (press twice) in the palette, `npm run dev:https`.
+- 10: `storage/validate.ts`, `storage/db.ts`, `storage/autosave.ts` (500 ms debounce, reference compare, flush on
+  hide). Recordings are stored as ArrayBuffer + MIME type. On any startup failure the app falls back to the default
+  song with saving off, and never overwrites a song it couldn't read.
+- Each feature had its own reviewer subagent: 0 high and 4 medium findings per feature, all fixed with tests first.
+  Known limits are in the spec Notes (two tabs = last write wins, and others).
+- The agent hit the usage limit mid-review and was resumed with its context; no work was lost.
+- Merge conflicts with the PWA work (`vite.config.ts`, README) were resolved by keeping both sides.
 
 ### 2026-09-29 — 11 PWA
 
