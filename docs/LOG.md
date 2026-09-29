@@ -26,6 +26,14 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Entries
 
+### 2026-09-29 — updates now reach users
+
+- The user asked to verify "select several squares + tap a sound → all change". It already worked on the live
+  site, but the user was running an old cached version. Root cause: the PWA worker never activated new versions
+  until all tabs were closed. Fixed (skipWaiting/clientsClaim) and added an in-app "New version available · Reload"
+  bar. Details in `docs/features/11-pwa.md` Update.
+- Lesson: after a deploy, a "doesn't work" report may be a stale client. The bar now makes that visible.
+
 ### 2026-09-29 — feedback round: 12 tempo ½×/2×, specs 13 swing and 14 prep area
 
 - The user asked for half/double tempo, swing, and a preparation area to drag figures from. Feasibility was assessed

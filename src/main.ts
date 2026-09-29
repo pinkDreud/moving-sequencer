@@ -17,6 +17,8 @@ import { RecordControl } from './recordControl.svelte';
 import { AppState, defaultSong, randomIdGen, watchSong } from './state.svelte';
 import { createAutosave, flushOnHide } from './storage/autosave';
 import { openDb, type Db } from './storage/db';
+import { watchForUpdates } from './pwaUpdate';
+import { UpdateStatus } from './updateStatus.svelte';
 import App from './ui/App.svelte';
 import './ui/global.css';
 
@@ -109,7 +111,18 @@ async function start(target: HTMLElement, audio: Audio, storage = true): Promise
     remove: (id) => recordings.remove(id),
   });
   const transport = createTransport({ engine: audio.engine, state: app, unlock: audio.unlock });
-  mount(App, { target, props: { app, transport, recording } });
+  const update = new UpdateStatus();
+  // Production only: the dev server has no service worker.
+  if (import.meta.env.PROD) {
+    watchForUpdates({
+      sw: navigator.serviceWorker,
+      doc: document,
+      url: `${import.meta.env.BASE_URL}sw.js`,
+      scope: import.meta.env.BASE_URL,
+      onUpdate: () => (update.ready = true),
+    });
+  }
+  mount(App, { target, props: { app, transport, recording, update } });
 }
 
 const target = document.getElementById('app');

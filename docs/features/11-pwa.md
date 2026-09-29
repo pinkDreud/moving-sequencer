@@ -34,3 +34,17 @@ first visit it also works offline, since the app is small and everything it need
 ## Files
 
 `vite.config.ts` (vite-plugin-pwa), `index.html`, `public/icons/*`, `scripts/make-icons.mjs`, `tests/e2e/pwa.spec.ts`.
+
+## Update 2026-09-29: updates reach open pages
+
+The user kept seeing the old palette behaviour after the issue #1 fix. The cause: the generated worker only called
+`skipWaiting()` when the page sent it a `SKIP_WAITING` message, and nothing did. So a new version waited until every
+tab and installed-app window was closed, which can take days on a phone. Fixes:
+
+- `workbox.skipWaiting` + `clientsClaim`: a new version takes over at once.
+- `injectRegister: false`: `src/pwaUpdate.ts` registers the worker itself, calls `registration.update()` when the page
+  comes back to the foreground, and reports a `controllerchange` on a page that already had a worker (i.e. it runs
+  outdated code).
+- `UpdateBar.svelte`: "New version available · Reload". It never reloads by itself, because that would cut playback
+  and drop the preparation area.
+- e2e `pwa.spec.ts` simulates a deploy by changing `dist/sw.js` on disk and expects the bar.
