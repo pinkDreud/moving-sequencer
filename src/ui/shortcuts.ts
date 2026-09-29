@@ -12,9 +12,9 @@ export interface KeyLike {
 
 const TEXT_FIELDS = 'input, select, textarea, [contenteditable]:not([contenteditable="false"])';
 
-/** Editing shortcut for a keydown, or null. Keys typed into text fields or held with Ctrl/Cmd/Alt are left alone. */
+/** Editing shortcut for a keydown, or null. Auto-repeat, text fields and Ctrl/Cmd/Alt combos are left alone. */
 export function shortcutFor(e: KeyLike): Shortcut | null {
-  if (e.ctrlKey || e.metaKey || e.altKey) return null;
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return null;
   if (e.target instanceof Element && e.target.closest(TEXT_FIELDS)) return null;
   switch (e.key) {
     case 'Delete':
