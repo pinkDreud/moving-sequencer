@@ -13,7 +13,7 @@ export interface StoredRecording {
 
 export interface Db {
   saveSong(song: Song): Promise<void>;
-  /** The saved song, validated and normalized; null when there is none, it is invalid, or reading fails. */
+  /** The saved song, validated and normalized; null when there is none or it is invalid. Rejects if reading fails. */
   loadSong(): Promise<Song | null>;
   saveRecording(sound: Sound, blob: Blob): Promise<void>;
   /** Valid saved recordings, oldest first; empty when reading fails. */
@@ -25,13 +25,8 @@ export interface Db {
 export function createDb(store: UseStore, clock: () => number = () => Date.now()): Db {
   return {
     saveSong: (song) => set(SONG_KEY, song, store),
-    async loadSong() {
-      try {
-        return parseSong(await get<unknown>(SONG_KEY, store));
-      } catch {
-        return null;
-      }
-    },
+    // A read error rejects: it must not look like "no song", or the default song would overwrite the real one.
+    loadSong: async () => parseSong(await get<unknown>(SONG_KEY, store)),
     async saveRecording(sound, blob) {
       // Bytes, not the Blob: older Safari could not store Blobs in IndexedDB.
       const record: RecordingRecord = {
@@ -49,10 +44,15 @@ export function createDb(store: UseStore, clock: () => number = () => Date.now()
       } catch {
         return [];
       }
-      return all
-        .filter(([key]) => typeof key === 'string' && key.startsWith(RECORDING_PREFIX))
-        .map(([, value]) => parseRecordingRecord(value))
-        .filter((record) => record !== null)
+      const records = new Map<SoundId, RecordingRecord>();
+      for (const [key, value] of all) {
+        const record = parseRecordingRecord(value);
+        // The key must name the sound it holds, and each id loads once (the palette is keyed by id).
+        if (record && key === RECORDING_PREFIX + record.sound.id && !records.has(record.sound.id)) {
+          records.set(record.sound.id, record);
+        }
+      }
+      return [...records.values()]
         .sort((a, b) => a.savedAt - b.savedAt)
         .map(({ sound, type, data }) => ({ sound, blob: new Blob([data], { type }) }));
     },
@@ -75,9 +75,10 @@ export async function openDb({
   store: makeStore = () => createStore('moving-sequencer', 'data'),
   timeoutMs = 2000,
 }: OpenDbOptions = {}): Promise<Db | null> {
-  if (typeof indexedDB === 'undefined' || indexedDB === null) return null;
   let timeout: ReturnType<typeof setTimeout> | undefined;
   try {
+    // Inside the try: with storage blocked, merely reading `indexedDB` throws a SecurityError (Firefox).
+    if (typeof indexedDB === 'undefined' || indexedDB === null) return null;
     const store = makeStore();
     const probe = get(SONG_KEY, store).then(() => true);
     const expired = new Promise<false>((resolve) => (timeout = setTimeout(() => resolve(false), timeoutMs)));

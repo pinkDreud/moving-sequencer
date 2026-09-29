@@ -45,6 +45,19 @@ export function createRecordings({
   newKey = randomKey,
   store,
 }: RecordingsOptions): Recordings {
+  /**
+   * Storage writes per recording, chained: a delete pressed while the save is still running must land after it,
+   * or the save would win and the deleted recording would come back after a reload.
+   */
+  const writes = new Map<SoundId, Promise<void>>();
+  function queue(id: SoundId, write: () => Promise<void>): void {
+    const next = (writes.get(id) ?? Promise.resolve()).then(write).catch(ignore);
+    writes.set(id, next);
+    void next.then(() => {
+      if (writes.get(id) === next) writes.delete(id);
+    });
+  }
+
   return {
     async add(blob) {
       const buffer = await decode(blob);
@@ -52,14 +65,15 @@ export function createRecordings({
       // Loaded first: the sound must be playable as soon as a square can use it.
       engine.load(sound.id, buffer);
       state.addSound(sound);
-      await store?.saveRecording(sound, blob).catch(ignore);
+      // Not awaited: a slow write (or Safari's quota prompt) must not hold the Record button on "Saving…".
+      if (store) queue(sound.id, () => store.saveRecording(sound, blob));
       return sound;
     },
     remove(id) {
       if (state.sounds.find((s) => s.id === id)?.source !== 'recording') return;
       state.removeSound(id);
       engine.unload(id);
-      store?.deleteRecording(id).catch(ignore);
+      if (store) queue(id, () => store.deleteRecording(id));
     },
   };
 }
@@ -74,10 +88,13 @@ export async function restoreRecordings(
 ): Promise<Sound[]> {
   const decoded = await Promise.all(
     stored.map(({ sound, blob }) =>
-      decode(blob).then(
-        (buffer) => ({ sound, buffer }),
-        () => null,
-      ),
+      // `then` first, so a decoder that throws synchronously is skipped like one that rejects.
+      Promise.resolve()
+        .then(() => decode(blob))
+        .then(
+          (buffer) => ({ sound, buffer }),
+          () => null,
+        ),
     ),
   );
   return decoded

@@ -40,11 +40,15 @@ export function createAutosave({
     const song = pending;
     pending = undefined;
     if (!song || song === lastSaved) return;
+    const previous = lastSaved;
     lastSaved = song;
     try {
       await save(song);
     } catch {
-      // Storage full or gone: keep working without saving; the next change tries again.
+      // Storage full or its connection lost (iOS, after backgrounding): the user sees nothing, and the song stays
+      // pending so the next change or flush (e.g. on pagehide) tries again. A newer pending song supersedes it.
+      if (lastSaved === song) lastSaved = previous;
+      pending ??= song;
     }
   }
 

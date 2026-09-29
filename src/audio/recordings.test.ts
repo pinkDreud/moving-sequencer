@@ -98,7 +98,7 @@ describe('createRecordings with a store', () => {
     const { recordings, store } = withStore();
     const sound = await recordings.add(new Blob(['x']));
     recordings.remove(sound.id);
-    expect(store.deleteRecording).toHaveBeenCalledWith(sound.id);
+    await vi.waitFor(() => expect(store.deleteRecording).toHaveBeenCalledWith(sound.id)); // after the save
   });
 
   it('does not wait for the storage write to make the sound available', async () => {

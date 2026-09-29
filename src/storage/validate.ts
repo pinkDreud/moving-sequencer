@@ -29,11 +29,28 @@ function str(value: unknown): string {
   return typeof value === 'string' ? value : fail();
 }
 
-function parseNode(value: unknown, ids: Set<string>): SeqNode {
+/** Group nesting accepted from storage: the UI renders groups recursively. */
+export const MAX_DEPTH = 32;
+/** Nodes accepted from storage, across all tracks. */
+export const MAX_NODES = 10_000;
+
+/**
+ * Maps every index, holes included: structured clone keeps array holes, and `map` would skip them (and leave an
+ * `undefined` node for the timeline and the UI to trip over).
+ */
+function each<T>(items: unknown[], parse: (item: unknown) => T): T[] {
+  return Array.from(items, parse);
+}
+
+function claim(id: string, ids: Set<string>): void {
+  if (ids.has(id) || ids.size >= MAX_NODES) fail();
+  ids.add(id);
+}
+
+function parseNode(value: unknown, ids: Set<string>, depth: number): SeqNode {
   if (!isObject(value)) fail();
   const id = str(value.id);
-  if (ids.has(id)) fail();
-  ids.add(id);
+  claim(id, ids);
   if (value.kind === 'square') {
     const { soundId, muted } = value;
     if (soundId !== null && typeof soundId !== 'string') fail();
@@ -41,10 +58,10 @@ function parseNode(value: unknown, ids: Set<string>): SeqNode {
     return square(id, soundId, muted);
   }
   if (value.kind === 'group') {
-    if (value.span !== 1 || !Array.isArray(value.children)) fail();
+    if (value.span !== 1 || !Array.isArray(value.children) || depth >= MAX_DEPTH) fail();
     return group(
       id,
-      value.children.map((child) => parseNode(child, ids)),
+      each(value.children, (child) => parseNode(child, ids, depth + 1)),
     );
   }
   return fail();
@@ -53,9 +70,8 @@ function parseNode(value: unknown, ids: Set<string>): SeqNode {
 function parseTrack(value: unknown, ids: Set<string>): Track {
   if (!isObject(value) || !Array.isArray(value.nodes)) fail();
   const id = str(value.id);
-  if (ids.has(id)) fail();
-  ids.add(id);
-  const nodes = value.nodes.map((node) => parseNode(node, ids));
+  claim(id, ids);
+  const nodes = each(value.nodes, (node) => parseNode(node, ids, 0));
   return normalize({ id, nodes });
 }
 
@@ -68,7 +84,7 @@ export function parseSong(data: unknown): Song | null {
     const slot = SLOT_VALUES.find((v) => v === slotValue);
     if (slot === undefined || !Array.isArray(tracks) || tracks.length === 0) return null;
     const ids = new Set<string>();
-    return { version: 1, bpm, slotValue: slot, tracks: tracks.map((t) => parseTrack(t, ids)) };
+    return { version: 1, bpm, slotValue: slot, tracks: each(tracks, (t) => parseTrack(t, ids)) };
   } catch (error) {
     if (error instanceof Invalid) return null;
     throw error;
@@ -90,6 +106,6 @@ export function parseRecordingRecord(value: unknown): RecordingRecord | null {
   const { type, data, savedAt } = value;
   if (typeof id !== 'string' || !id.startsWith('rec-') || source !== 'recording') return null;
   if (typeof name !== 'string' || typeof color !== 'string' || typeof type !== 'string') return null;
-  if (!(data instanceof ArrayBuffer) || typeof savedAt !== 'number') return null;
+  if (!(data instanceof ArrayBuffer) || typeof savedAt !== 'number' || !Number.isFinite(savedAt)) return null;
   return { sound: { id, name, color, source }, type, data, savedAt };
 }
