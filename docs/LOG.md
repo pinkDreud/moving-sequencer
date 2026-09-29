@@ -4,8 +4,8 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Current state
 
-- **Phase:** 00–03 done and merged. Track B (04 timeline + 05 scheduler) is running in a worktree agent.
-- **Next step:** review and merge track B, then 06 audio/transport ∥ 07 strip UI (specs already written)
+- **Phase:** 00–05 done and merged (154 tests). The pure core and the scheduler are complete; nothing audible or visible yet.
+- **Next step:** app-state skeleton (`src/state.svelte.ts`, kit sound metadata), then 06 audio/transport ∥ 07 strip UI
 - **Blockers:** none. No deployment: Pages is unavailable for a private repo on the free plan, and the user chose "no deploy for now".
 
 ## Documentation index
@@ -19,6 +19,13 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-29 — 04–05 timeline + scheduler merged
+
+- `src/core/timeline.ts` (`buildTimeline`, `leafAt`, `EPSILON`), `src/core/timing.ts` (`secondsPerSlot`),
+  `src/audio/engine.ts` (`AudioEngine`, `FakeEngine`), `src/audio/scheduler.ts` (`createScheduler`).
+- Decisions: late ticks drop missed events instead of bursting them; `positionAt` returns `null` when stopped;
+  only `tracks[0]` is scheduled; at most 1000 loop wraps per tick. Details in `docs/features/05-scheduler.md`.
 
 ### 2026-09-29 — 01–03 core ops merged
 

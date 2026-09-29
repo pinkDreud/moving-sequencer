@@ -27,6 +27,12 @@ playhead lights up.
 - Very deep nesting: children get narrow. Keep a minimum of 6 px and clip the rest (the timing stays correct).
 - Keyboard: Delete/Backspace deletes the selection, M toggles mute, G groups, Shift+G ungroups, Escape clears the selection.
 
+## Notes from 01–05
+
+- Keep the song in `$state.raw`: ops return new objects and keep the identity of what is unchanged. A deep `$state`
+  proxy or `$state.snapshot` would give a new track on every read, and the scheduler would rebuild the timeline every tick.
+- The op `group` clashes by name with the constructor `group` from `model.ts`; alias it on import.
+
 ## Out of scope
 
 Drag & drop (08), lasso (08).

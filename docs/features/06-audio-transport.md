@@ -25,6 +25,11 @@ start/stop the loop and change BPM and slot value, and changes are heard immedia
 - Play pressed before the kit finished rendering → start once it's ready (or disable Play until ready).
 - Space bar toggles play/stop on desktop (not while typing in the BPM input).
 
+## Notes from 05
+
+- Resume the `AudioContext` **before** `scheduler.start()`: a suspended context's clock does not move.
+- The scheduler only plays `song.tracks[0]` and reads the song fresh on every tick.
+
 ## Out of scope
 
 Per-sound volume, master volume/limiter (maybe later), recording (09).
