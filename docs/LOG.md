@@ -4,10 +4,8 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Current state
 
-- **Phase:** 00 scaffold done. Two parallel tracks are running:
-  - track A: 01 basic ops → 02 move → 03 groups (`src/core/ops.ts`), worktree agent
-  - track B: 04 timeline + timing → 05 scheduler (`src/core/timeline.ts`, `src/audio/scheduler.ts`), worktree agent
-- **Next step:** review and merge tracks A and B, then 06 audio engine ∥ 07 strip UI
+- **Phase:** 00–03 done and merged. Track B (04 timeline + 05 scheduler) is running in a worktree agent.
+- **Next step:** review and merge track B, then 06 audio/transport ∥ 07 strip UI (specs already written)
 - **Blockers:** none. No deployment: Pages is unavailable for a private repo on the free plan, and the user chose "no deploy for now".
 
 ## Documentation index
@@ -21,6 +19,15 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-29 — 01–03 core ops merged
+
+- `src/core/ops.ts`: `normalize, insert, remove, setSound, toggleMute, move, group, ungroup` plus the read helpers
+  `findNode, findLocation, nodeIds`. 104 tests. Specs and decisions are in `docs/features/01..03-*.md`.
+- Key decisions: a no-op returns the **same** track object (cheap change detection for scheduler and autosave);
+  group ids in setSound/toggleMute target all squares below; `group(track, ids, nextId)` takes an IdGen.
+- Watch out: the op `group` clashes by name with the constructor `group` in `model.ts`; alias one on import.
+- Test helpers in `src/core/test-helpers.ts`: `parseTrack('A G[B C] D')`, `shape(track)`, `deepFreeze`.
 
 ### 2026-09-29 — deploy removed
 
