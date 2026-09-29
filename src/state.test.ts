@@ -111,6 +111,26 @@ describe('AppState', () => {
     expect(state.song.bpm).toBe(before.bpm);
   });
 
+  it('sets swing clamped to [0, 0.75] and rounded to whole percent, ignoring NaN', () => {
+    const state = new AppState({ song: song(), nextId: createIdGen('n') });
+    const before = state.song;
+    state.setSwing(0); // missing means 0: nothing changes
+    expect(state.song).toBe(before);
+    state.setSwing(0.333);
+    expect(state.song.swing).toBe(0.33);
+    expect(state.song.bpm).toBe(before.bpm);
+    const same = state.song;
+    state.setSwing(0.3304);
+    expect(state.song).toBe(same);
+    state.setSwing(2);
+    expect(state.song.swing).toBe(0.75);
+    state.setSwing(-1);
+    expect(state.song.swing).toBe(0);
+    const zero = state.song;
+    state.setSwing(NaN);
+    expect(state.song).toBe(zero);
+  });
+
   it('sets the slot value', () => {
     const state = new AppState({ song: song(), nextId: createIdGen('n') });
     state.setSlotValue(16);

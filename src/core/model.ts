@@ -37,6 +37,8 @@ export interface Song {
   slotValue: SlotValue;
   /** Missing means 1× (songs saved before the multiplier existed). */
   tempoFactor?: TempoFactor;
+  /** Offbeat delay in slots, 0 to 0.75 (`SWING_MAX`); missing means straight. */
+  swing?: number;
   tracks: Track[];
 }
 

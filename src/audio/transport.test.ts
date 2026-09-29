@@ -188,6 +188,21 @@ describe('playhead', () => {
     expect(s.app.playheadId).toBe('x');
   });
 
+  it('stays on the stretched first square of a pair until its swung partner sounds', async () => {
+    const s = setup();
+    s.app.setSwing(0.5);
+    await s.transport.play();
+    // The offbeat s1 sounds at warped slot 1.5: at warped 1.25 the first square is still heard.
+    s.at(0.05 + 1.25 * 0.25);
+    expect(s.app.playheadId).toBe('s0');
+    s.at(0.05 + 1.6 * 0.25);
+    expect(s.app.playheadId).toBe('s1');
+    s.at(0.05 + 3.4 * 0.25);
+    expect(s.app.playheadId).toBe('s2');
+    s.at(0.05 + 3.6 * 0.25);
+    expect(s.app.playheadId).toBe('s3');
+  });
+
   it('is null while playing an empty pattern', async () => {
     const s = setup([]);
     await s.transport.play();

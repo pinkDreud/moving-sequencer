@@ -1,6 +1,6 @@
 import type { Song, Track } from '../core/model';
 import { buildTimeline, EPSILON, type Timeline } from '../core/timeline';
-import { secondsPerSlot } from '../core/timing';
+import { secondsPerSlot, unwarp, warp } from '../core/timing';
 import type { AudioEngine } from './engine';
 
 /** `setInterval`/`clearInterval` compatible; injected so tests drive ticks by hand. */
@@ -54,7 +54,10 @@ export function createScheduler({
   let handle: unknown;
   /** Audio time of the first event since start or since the pattern stopped being empty. */
   let startTime = 0;
-  /** Slot position scheduled up to, and the audio time it corresponds to. */
+  /**
+   * Slot position scheduled up to, and the audio time it corresponds to. The cursor is unwarped (a position in
+   * the pattern); swing only changes how slot distances turn into seconds.
+   */
   let cursor = 0;
   let cursorTime = 0;
   let memo: { track: Track; timeline: Timeline } | undefined;
@@ -66,11 +69,24 @@ export function createScheduler({
     return memo.timeline;
   }
 
-  function playable(): { timeline: Timeline; sps: number } | null {
+  function playable(): {
+    timeline: Timeline;
+    sps: number;
+    swung: (position: number) => number;
+    unswung: (time: number) => number;
+  } | null {
     const song = getSong();
     const timeline = timelineOf(song.tracks[0]);
     const sps = secondsPerSlot(song.bpm, song.slotValue, song.tempoFactor);
-    return timeline.length > 0 && sps > 0 && Number.isFinite(sps) ? { timeline, sps } : null;
+    if (!(timeline.length > 0 && sps > 0 && Number.isFinite(sps))) return null;
+    const { length } = timeline;
+    const swing = song.swing ?? 0;
+    return {
+      timeline,
+      sps,
+      swung: (position) => warp(position, swing, length),
+      unswung: (time) => unwarp(time, swing, length),
+    };
   }
 
   function tick(): void {
@@ -83,17 +99,20 @@ export function createScheduler({
       cursorTime = startTime = Math.max(cursorTime, horizon);
       return;
     }
-    const { timeline, sps } = state;
+    const { timeline, sps, swung, unswung } = state;
     const { length, leaves } = timeline;
     cursor %= length;
     if (cursorTime < now) {
       // Late tick (throttled tab, main-thread jank): drop what should already have played rather than
       // playing it in a burst; the position keeps following time.
-      cursor = (cursor + (now - cursorTime) / sps) % length;
+      cursor = unswung((swung(cursor) + (now - cursorTime) / sps) % length);
       cursorTime = now;
     }
     for (let loops = 0; cursorTime < horizon && loops < MAX_LOOPS_PER_TICK;) {
-      const end = Math.min(cursor + (horizon - cursorTime) / sps, length);
+      // Seconds map linearly to swung slots; the window itself stays in (unwarped) pattern positions, so
+      // everything below is the straight algorithm with `swung(p) − from` in place of `p − cursor`.
+      const from = swung(cursor);
+      const end = unswung(Math.min(from + (horizon - cursorTime) / sps, length));
       // Both bounds shifted by -EPSILON: consecutive windows partition the loop, so a leaf whose start is
       // within float error of a window boundary is scheduled exactly once.
       for (const leaf of leaves) {
@@ -103,13 +122,13 @@ export function createScheduler({
           leaf.start >= cursor - EPSILON &&
           leaf.start < end - EPSILON
         )
-          engine.play(leaf.soundId, cursorTime + (leaf.start - cursor) * sps);
+          engine.play(leaf.soundId, cursorTime + (swung(leaf.start) - from) * sps);
       }
       if (end < length) {
         cursor = end;
         cursorTime = horizon;
       } else {
-        cursorTime += (length - cursor) * sps;
+        cursorTime += (length - from) * sps;
         cursor = 0;
         loops++;
       }
@@ -139,8 +158,11 @@ export function createScheduler({
       const state = playing ? playable() : null;
       if (!state) return null;
       if (time < startTime) return 0;
-      const { length } = state.timeline;
-      const position = (((cursor - (cursorTime - time) / state.sps) % length) + length) % length;
+      const { timeline, sps, swung, unswung } = state;
+      const { length } = timeline;
+      // `cursor` may still be past a pattern that just shrank; the next tick would wrap it the same way.
+      const time0 = swung(cursor % length) - (cursorTime - time) / sps;
+      const position = unswung(((time0 % length) + length) % length);
       // A float result a hair below `length` is really the loop start.
       return position > length - EPSILON ? 0 : position;
     },
