@@ -22,20 +22,20 @@ A small web step sequencer.
 
 ### Decisions log (from user Q&A, 2026-09-29)
 
-| Topic               | Decision                                                                      |
-| ------------------- | ----------------------------------------------------------------------------- |
-| Stack               | TypeScript (strict) + Vite + Svelte 5 (runes) + Web Audio API                 |
-| Group span          | always 1 slot in v1; model keeps `span` field (fixed to 1) for later          |
-| Group UX            | multi-select → Group button; Ungroup; drag into/out of groups                 |
-| Sounds              | built-in kit (synthesized at startup) + mic recording                         |
-| Timing              | BPM + slot value (4 = quarter, 8 = eighth, 16 = sixteenth)                    |
-| Playback            | loop forever                                                                  |
-| Live edit semantics | playhead follows **position in time** (tape-like), not the square             |
-| Multi-move          | temporary multi-select, not grouping; a group always drags as one block       |
-| Remove              | drag off the strip = delete (pattern shrinks); mute = silent (length kept)    |
-| Tap                 | tap/click = select; SelectionBar offers Mute, Sound, Group, Ungroup, Delete   |
-| Persistence         | autosave to IndexedDB (song + recordings)                                     |
-| CI/CD               | GitHub Actions (lint, typecheck, unit, e2e) + GitHub Pages deploy from `main` |
+| Topic               | Decision                                                                                                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stack               | TypeScript (strict) + Vite + Svelte 5 (runes) + Web Audio API                                                                                                                   |
+| Group span          | always 1 slot in v1; model keeps `span` field (fixed to 1) for later                                                                                                            |
+| Group UX            | multi-select → Group button; Ungroup; drag into/out of groups                                                                                                                   |
+| Sounds              | built-in kit (synthesized at startup) + mic recording                                                                                                                           |
+| Timing              | BPM + slot value (4 = quarter, 8 = eighth, 16 = sixteenth)                                                                                                                      |
+| Playback            | loop forever                                                                                                                                                                    |
+| Live edit semantics | playhead follows **position in time** (tape-like), not the square                                                                                                               |
+| Multi-move          | temporary multi-select, not grouping; a group always drags as one block                                                                                                         |
+| Remove              | drag off the strip = delete (pattern shrinks); mute = silent (length kept)                                                                                                      |
+| Tap                 | tap/click = select; SelectionBar offers Mute, Sound, Group, Ungroup, Delete                                                                                                     |
+| Persistence         | autosave to IndexedDB (song + recordings)                                                                                                                                       |
+| CI/CD               | GitHub Actions (lint, typecheck, unit, e2e). **No deployment for now**: GitHub Pages needs a public repo or a paid plan. Phone testing uses `npm run dev -- --host` on the LAN. |
 
 ## 2. Architecture
 
@@ -197,20 +197,20 @@ Autosave debounced 500 ms after each change; restore on load; fallback to a defa
 
 ## 3. Roadmap (each item = one feature cycle, see AGENTS.md §Workflow)
 
-| #   | Feature                                                          | Depends on | Parallelizable with |
-| --- | ---------------------------------------------------------------- | ---------- | ------------------- |
-| 00  | Scaffold: tooling, CI, Pages deploy, docs, `core/model.ts` types | —          | —                   |
-| 01  | Basic ops: insert, remove, setSound, toggleMute, normalize       | 00         | 04                  |
-| 02  | Move ops (single, multi, groups as block)                        | 01         | 04, 05              |
-| 03  | Group / ungroup / move into-out of groups                        | 02         | 05                  |
-| 04  | Timeline + timing                                                | 00         | 01–03               |
-| 05  | Scheduler (fake clock tests, live edit tests)                    | 04         | 02, 03              |
-| 06  | Audio engine + kit + transport UI                                | 05         | 07                  |
-| 07  | Strip UI, palette, selection, SelectionBar, playhead             | 03, 04     | 06                  |
-| 08  | Drag & drop (dropTarget + controller + delete-by-drag + lasso)   | 07         | 09                  |
-| 09  | Mic recording                                                    | 06         | 08                  |
-| 10  | Autosave (IndexedDB)                                             | 07         | 09                  |
-| 11  | PWA: manifest, installable, offline                              | 10         | —                   |
+| #   | Feature                                                        | Depends on | Parallelizable with |
+| --- | -------------------------------------------------------------- | ---------- | ------------------- |
+| 00  | Scaffold: tooling, CI, docs, `core/model.ts` types             | —          | —                   |
+| 01  | Basic ops: insert, remove, setSound, toggleMute, normalize     | 00         | 04                  |
+| 02  | Move ops (single, multi, groups as block)                      | 01         | 04, 05              |
+| 03  | Group / ungroup / move into-out of groups                      | 02         | 05                  |
+| 04  | Timeline + timing                                              | 00         | 01–03               |
+| 05  | Scheduler (fake clock tests, live edit tests)                  | 04         | 02, 03              |
+| 06  | Audio engine + kit + transport UI                              | 05         | 07                  |
+| 07  | Strip UI, palette, selection, SelectionBar, playhead           | 03, 04     | 06                  |
+| 08  | Drag & drop (dropTarget + controller + delete-by-drag + lasso) | 07         | 09                  |
+| 09  | Mic recording                                                  | 06         | 08                  |
+| 10  | Autosave (IndexedDB)                                           | 07         | 09                  |
+| 11  | PWA: manifest, installable, offline                            | 10         | —                   |
 
 Parallel work: run independent features in separate git worktrees (one agent each), merge sequentially.
 
@@ -219,7 +219,9 @@ Parallel work: run independent features in separate git worktrees (one agent eac
 - `npm run test` — Vitest unit + component tests.
 - `npm run test:e2e` — Playwright: Chromium, WebKit, iPhone and Pixel emulation, with `?fake-audio`.
 - `npm run lint`, `npm run check` — ESLint, svelte-check (TypeScript).
-- CI must be green on `main`; after deploy, manual check on the Pages URL on desktop and phone.
+- CI must be green on `main`. Manual check on desktop and on a phone through `npm run dev -- --host`.
+- Mic recording needs a secure context. Over plain-HTTP LAN it only works on `localhost`, so phone mic testing
+  needs HTTPS on the dev server (e.g. `@vitejs/plugin-basic-ssl`). Decide during feature 09.
 
 ## 5. Future (out of scope for v1, keep the door open)
 

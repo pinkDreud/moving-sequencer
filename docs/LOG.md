@@ -8,7 +8,7 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
   - track A: 01 basic ops → 02 move → 03 groups (`src/core/ops.ts`), worktree agent
   - track B: 04 timeline + timing → 05 scheduler (`src/core/timeline.ts`, `src/audio/scheduler.ts`), worktree agent
 - **Next step:** review and merge tracks A and B, then 06 audio engine ∥ 07 strip UI
-- **Blockers:** GitHub Pages must be enabled once by hand: repo Settings → Pages → Source = "GitHub Actions".
+- **Blockers:** none. No deployment: Pages is unavailable for a private repo on the free plan, and the user chose "no deploy for now".
 
 ## Documentation index
 
@@ -21,6 +21,12 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-29 — deploy removed
+
+- The Pages deploy failed: Pages was not enabled, and enabling it through the API returned 422 "plan does not support
+  GitHub Pages" (private repo). The user chose no deploy for now. `deploy.yml` was removed and docs point to
+  `npm run dev -- --host` for phone testing. `gh` is now authenticated.
 
 ### 2026-09-29 — scaffold
 
