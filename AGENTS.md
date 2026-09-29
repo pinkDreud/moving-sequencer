@@ -56,7 +56,7 @@ Never skip step 2. Bugs get a failing regression test before the fix.
 - **Svelte 5 runes** (`$state`, `$derived`, `$effect`, `$props`); no legacy `export let` or stores.
 - Components stay thin: logic goes to `core/` or `state.svelte.ts` where it can be unit-tested.
 - **Input**: pointer events only (`pointerdown/move/up/cancel`), never HTML5 drag-and-drop (broken on mobile).
-  Touch targets ≥ 44 px. Everything must work with mouse, touch and pen.
+  Touch targets ≥ 44 px, except strip squares on narrow phones (≥ 8 per row wins, see feature 16). Everything must work with mouse, touch and pen.
 - **Audio**: all sound timing goes through the scheduler with `AudioContext.currentTime`; never `setTimeout` for notes.
 - Naming: `camelCase` functions/vars, `PascalCase` types/components, `kebab-case` for docs, `NN-slug` for features.
   Files: `thing.ts` + colocated `thing.test.ts`; components `PascalCase.svelte` + `PascalCase.test.ts`.

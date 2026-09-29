@@ -4,7 +4,7 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Current state
 
-- **Phase:** features 00–15 are done and live (709 unit, 199 e2e tests).
+- **Phase:** features 00–16 are done and live (709 unit, 215 e2e tests).
 - **Next step:** user feedback on real devices (swing by ear, prep drag on a phone). Open ideas: auto-scroll while
   dragging on phones, undo/redo, multi-track, branch protection on `main`.
   `feat/14-prep-area`).
@@ -26,6 +26,11 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-30 — 16 at least 8 slots per row
+
+- Rows wrap by screen width but always hold at least 8 slots; squares shrink on narrow screens (container query).
+  The user accepted the smaller-than-44-px touch targets on phones.
 
 ### 2026-09-29 — 15 editing keys (user feedback in Italian)
 
