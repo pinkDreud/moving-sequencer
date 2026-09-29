@@ -100,3 +100,19 @@ test('fits a 360 px wide phone without horizontal scroll, slots stay ≥ 44 px',
   expect(box?.width).toBeGreaterThanOrEqual(44);
   expect(box?.height).toBeGreaterThanOrEqual(44);
 });
+
+test('issue #1: click a square, then a sample: the sound goes into that square', async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto('./');
+  await paletteButton(page, 'Clap').click();
+  await expect(slots(page)).toHaveCount(9);
+  const target = slots(page).nth(3);
+  if (isMobile) await target.tap();
+  else await target.click();
+  await paletteButton(page, 'Rim').click();
+  await expect(slots(page)).toHaveCount(9);
+  await expect(slots(page).nth(3)).toHaveAttribute('aria-label', 'Rim');
+  await expect(slots(page).nth(4)).not.toHaveAttribute('aria-label', 'Rim');
+});

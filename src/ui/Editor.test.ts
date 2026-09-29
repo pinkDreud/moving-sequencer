@@ -42,29 +42,15 @@ describe('Editor', () => {
     expect(shape(app.track)).toBe('A n1 B');
   });
 
-  it('Sound then a palette tap sets the sound of the selection once, then inserting resumes', () => {
+  it('a palette tap with a selection sets the sound of the selected squares (no Sound button)', () => {
     const app = makeApp('A B C', ['A', 'C']);
     render(Editor, { app });
-    fireEvent.click(button('Sound'));
+    expect(screen.queryByRole('button', { name: 'Sound', exact: true })).toBeNull();
     fireEvent.click(paletteButton('Rim'));
     expect(shape(app.track)).toBe('A B C');
     expect(findNode(app.track, 'A')).toMatchObject({ soundId: 'rim' });
     expect(findNode(app.track, 'C')).toMatchObject({ soundId: 'rim' });
     expect(findNode(app.track, 'B')).toMatchObject({ soundId: 'kick' });
-    expect(button('Sound')).toHaveAttribute('aria-pressed', 'false');
-    fireEvent.click(paletteButton('Rim'));
-    expect(shape(app.track)).toBe('A B C n1');
-  });
-
-  it('clearing the selection turns the sound mode off', () => {
-    const app = makeApp('A B', ['A']);
-    render(Editor, { app });
-    fireEvent.click(button('Sound'));
-    app.clearSelection();
-    flushSync();
-    app.select(['B']);
-    flushSync();
-    expect(button('Sound')).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('keyboard: Delete, M, G, Shift+G and Escape act on the selection', () => {

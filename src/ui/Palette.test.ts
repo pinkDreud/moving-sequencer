@@ -145,11 +145,4 @@ describe('Palette', () => {
       expect(deps.remove).not.toHaveBeenCalled();
     });
   });
-
-  it('tells the user that the next pick sets the sound when armed', () => {
-    const { rerender } = render(Palette, { sounds: KIT, onpick: () => {} });
-    expect(screen.queryByText(/pick a sound for the selection/i)).toBeNull();
-    rerender({ sounds: KIT, onpick: () => {}, armed: true });
-    expect(screen.getByText(/pick a sound for the selection/i)).toBeInTheDocument();
-  });
 });
