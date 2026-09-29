@@ -88,5 +88,6 @@ Never skip step 2. Bugs get a failing regression test before the fix.
 
 - Independent roadmap items (see PLAN.md §3 "Parallelizable with") can run in parallel, each agent in its own
   git worktree on its own `feat/NN-slug` branch, following this same workflow. Merge one at a time, rebasing the rest.
+- Parallel agents run e2e on their own port: `PW_PORT=41xx npm run test:e2e`. The config never reuses a running server.
 - An agent's brief must name: the feature doc, the files it owns, and "follow AGENTS.md".
 - Whoever finishes a step updates `docs/LOG.md`.
