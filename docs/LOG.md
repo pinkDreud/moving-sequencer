@@ -25,6 +25,15 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Entries
 
+### 2026-09-29 — license, credit, history rewrite
+
+- MIT license (`LICENSE`, `package.json`). The README has a "How this was made" section: written by Claude under
+  Matteo's direction.
+- The author/committer email in all history was rewritten from the work address to `matteo.magherini@gmail.com`
+  (the user asked for it) and `main` was force-pushed. **Every commit hash before this entry changed**, so old
+  hashes seen elsewhere no longer resolve. The pre-rewrite history is kept locally as branch
+  `backup/pre-email-rewrite`. The repo's `user.email` is now the gmail address.
+
 ### 2026-09-29 — 09 mic recording + 10 autosave merged (v1 complete)
 
 - 09: `audio/sampleOps.ts` (pure trim/normalize/fades), `audio/recorder.ts`, `audio/recordings.ts`,
@@ -39,7 +48,7 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ### 2026-09-29 — 11 PWA
 
-- CI broke once on a docs-only commit (`eb980bf`): Prettier needed two passes to settle a markdown list, and the
+- CI broke once on a docs-only commit (`6587ebc`): Prettier needed two passes to settle a markdown list, and the
   commit skipped `npm run lint`. Fixed in the next commit. Rule stands: run `npm run lint` before **every** commit,
   including `[DOC]`.
 - `vite-plugin-pwa`: manifest, auto-updating service worker (production only), and icons generated from

@@ -28,4 +28,4 @@ The project builds, tests and lints. It contains no features yet. The page shows
 - `base` is `/moving-sequencer/` in dev, preview and build, so paths behave the same everywhere.
 - The deploy workflow was removed on 2026-09-29: GitHub answered "Your current plan does not support GitHub Pages
   for this repository" (private repo, free plan). The `/moving-sequencer/` base path stays, so re-enabling
-  Pages later (public repo) only needs the workflow back from git history (commit e49bb3e).
+  Pages later (public repo) only needs the workflow back from git history (commit 6ed6a84).
