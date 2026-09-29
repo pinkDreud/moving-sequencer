@@ -125,13 +125,16 @@ export function remove(track: Track, ids: readonly NodeId[]): Track {
 
 /** Sets the sound of the targeted squares (a group id targets all squares below it). */
 export function setSound(track: Track, ids: readonly NodeId[], soundId: SoundId | null): Track {
-  return updateSquares(track, ids, (s) => (s.soundId === soundId ? s : { ...s, soundId }));
+  return updateSquares(track, targetedSquares(track, ids), (s) =>
+    s.soundId === soundId ? s : { ...s, soundId },
+  );
 }
 
 /** Unmutes the targeted squares if all are muted, else mutes them all (a group id targets its squares). */
 export function toggleMute(track: Track, ids: readonly NodeId[]): Track {
-  const muted = !targetedSquares(track, ids).every((s) => s.muted);
-  return updateSquares(track, ids, (s) => (s.muted === muted ? s : { ...s, muted }));
+  const targets = targetedSquares(track, ids);
+  const muted = !targets.every((s) => s.muted);
+  return updateSquares(track, targets, (s) => (s.muted === muted ? s : { ...s, muted }));
 }
 
 function targetedSquares(track: Track, ids: readonly NodeId[]): Square[] {
@@ -142,10 +145,10 @@ function targetedSquares(track: Track, ids: readonly NodeId[]): Square[] {
     .flatMap((e) => squaresOf(e.node));
 }
 
-function updateSquares(track: Track, ids: readonly NodeId[], update: (s: Square) => Square): Track {
-  const targets = new Set(targetedSquares(track, ids));
+function updateSquares(track: Track, targets: Square[], update: (s: Square) => Square): Track {
+  const set = new Set(targets);
   return withNodes(
     track,
-    rewrite(track.nodes, (n) => [n.kind === 'square' && targets.has(n) ? update(n) : n]),
+    rewrite(track.nodes, (n) => [n.kind === 'square' && set.has(n) ? update(n) : n]),
   );
 }
