@@ -30,3 +30,68 @@ export class FakeEngine implements AudioEngine {
     this.stopAllCount++;
   }
 }
+
+/** `FakeEngine` whose clock follows real time (`?fake-audio` e2e), so the scheduler advances in a browser. */
+export class RealtimeFakeEngine extends FakeEngine {
+  private readonly origin: number;
+
+  /** `clockMs` returns milliseconds, like `performance.now()`. */
+  constructor(private readonly clockMs: () => number = () => performance.now()) {
+    super();
+    this.origin = clockMs();
+  }
+
+  override now(): number {
+    return (this.clockMs() - this.origin) / 1000;
+  }
+}
+
+/** Master level: a few overlapping kit sounds at full scale would clip. */
+const MASTER_GAIN = 0.8;
+
+/** The real engine: plays loaded buffers on one `AudioContext`. */
+export class WebAudioEngine implements AudioEngine {
+  private readonly master: GainNode;
+  private readonly buffers = new Map<SoundId, AudioBuffer>();
+  /** Sources started (possibly in the future) and not ended yet, so `stopAll` can cancel them. */
+  private readonly live = new Set<AudioBufferSourceNode>();
+
+  constructor(readonly context: AudioContext = new AudioContext()) {
+    this.master = context.createGain();
+    this.master.gain.value = MASTER_GAIN;
+    this.master.connect(context.destination);
+  }
+
+  load(soundId: SoundId, buffer: AudioBuffer): void {
+    this.buffers.set(soundId, buffer);
+  }
+
+  /** Resumes a suspended (or iOS-interrupted) context; the first call must happen inside a user gesture. */
+  async unlock(): Promise<void> {
+    if (this.context.state !== 'running') await this.context.resume();
+  }
+
+  now(): number {
+    return this.context.currentTime;
+  }
+
+  play(soundId: SoundId, when: number): void {
+    const buffer = this.buffers.get(soundId);
+    if (!buffer) return;
+    const source = this.context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(this.master);
+    source.onended = () => {
+      this.live.delete(source);
+      source.disconnect();
+    };
+    source.start(Math.max(0, when));
+    this.live.add(source);
+  }
+
+  stopAll(): void {
+    // Stopping a source whose start time is still in the future cancels it; `onended` then disconnects it.
+    for (const source of this.live) source.stop();
+    this.live.clear();
+  }
+}
