@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { KIT } from './audio/sounds';
-import { createIdGen, square, type Song } from './core/model';
+import { createIdGen, group, square, type Song, type Sound } from './core/model';
 import { remove, setSound } from './core/ops';
 import { AppState, defaultSong } from './state.svelte';
 
@@ -94,5 +94,61 @@ describe('AppState', () => {
     const state = new AppState({ song: song(), nextId: createIdGen('n') });
     expect(state.soundById('snare')?.name).toBe('Snare');
     expect(state.soundById('nope')).toBeUndefined();
+  });
+
+  describe('sounds', () => {
+    const rec: Sound = { id: 'rec-a', name: 'Rec 1', color: '#fff', source: 'recording' };
+
+    it('addSound appends a sound after the kit', () => {
+      const state = new AppState({ song: song(), nextId: createIdGen('n') });
+      state.addSound(rec);
+      expect(state.sounds.map((s) => s.id)).toEqual([...KIT.map((s) => s.id), 'rec-a']);
+      expect(state.soundById('rec-a')).toBe(rec);
+    });
+
+    it('addSound ignores a sound whose id is already there', () => {
+      const state = new AppState({ song: song(), nextId: createIdGen('n') });
+      state.addSound(rec);
+      const before = state.sounds;
+      state.addSound({ ...rec, name: 'Other' });
+      state.addSound({ id: 'kick', name: 'Fake kick', color: '#000', source: 'recording' });
+      expect(state.sounds).toBe(before);
+    });
+
+    it('removeSound removes it and turns the squares that used it silent in every track', () => {
+      const s: Song = {
+        ...song(),
+        tracks: [
+          { id: 't', nodes: [square('a', 'rec-a'), group('g', [square('b', 'rec-a'), square('c', 'hat')])] },
+          { id: 't2', nodes: [square('d', 'rec-a', true)] },
+        ],
+      };
+      const state = new AppState({ song: s, nextId: createIdGen('n') });
+      state.addSound(rec);
+      state.select(['a']);
+      state.removeSound('rec-a');
+      expect(state.soundById('rec-a')).toBeUndefined();
+      expect(state.track.nodes[0]).toEqual(square('a', null));
+      expect(state.song.tracks[1]?.nodes[0]).toEqual(square('d', null));
+      expect(state.track.nodes[1]).toMatchObject({ children: [square('b', null), square('c', 'hat')] });
+      expect([...state.selection]).toEqual(['a']);
+    });
+
+    it('removeSound keeps the song object when no square used the sound', () => {
+      const state = new AppState({ song: song(), nextId: createIdGen('n') });
+      state.addSound(rec);
+      const before = state.song;
+      state.removeSound('rec-a');
+      expect(state.song).toBe(before);
+      expect(state.soundById('rec-a')).toBeUndefined();
+    });
+
+    it('removeSound of an unknown id changes nothing', () => {
+      const state = new AppState({ song: song(), nextId: createIdGen('n') });
+      const [songBefore, soundsBefore] = [state.song, state.sounds];
+      state.removeSound('nope');
+      expect(state.song).toBe(songBefore);
+      expect(state.sounds).toBe(soundsBefore);
+    });
   });
 });

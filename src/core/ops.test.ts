@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { group, square, type Group, type Square, type Track } from './model';
-import { findLocation, findNode, insert, nodeIds, normalize, remove, setSound, toggleMute } from './ops';
+import {
+  clearSound,
+  findLocation,
+  findNode,
+  insert,
+  nodeIds,
+  normalize,
+  remove,
+  setSound,
+  toggleMute,
+} from './ops';
 import { deepFreeze, parseTrack, shape } from './test-helpers';
 
 const sq = (id: string): Square => square(id, 'kick');
@@ -206,6 +216,33 @@ describe('toggleMute', () => {
 
   it('returns the same track when no square is targeted', () => {
     expect(toggleMute(t, ['nope'])).toBe(t);
+  });
+});
+
+describe('clearSound', () => {
+  const t = frozen([
+    square('A', 'rec-1'),
+    group('G', [square('B', 'rec-1', true), square('C', 'hat')]),
+    square('D', 'rec-2'),
+    group('H', [square('E', 'kick'), square('F', null)]),
+  ]);
+
+  it('turns every square with that sound, at any depth, into a plain silent square', () => {
+    expect(sounds(clearSound(t, 'rec-1'))).toEqual(['A:-', 'B:-', 'C:hat', 'D:rec-2', 'E:kick', 'F:-']);
+  });
+
+  it('keeps the structure and the ids', () => {
+    expect(shape(clearSound(t, 'rec-1'))).toBe(shape(t));
+  });
+
+  it('returns the same track when no square uses the sound', () => {
+    expect(clearSound(t, 'snare')).toBe(t);
+  });
+
+  it('keeps the identity of untouched subtrees', () => {
+    const out = clearSound(t, 'rec-2');
+    expect(out.nodes[1]).toBe(t.nodes[1]);
+    expect(out.nodes[3]).toBe(t.nodes[3]);
   });
 });
 
