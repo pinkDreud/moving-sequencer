@@ -189,6 +189,11 @@
 {/if}
 
 <style>
+  /* The strips size their squares from this width (see --slot-size in global.css). */
+  .editor {
+    container-type: inline-size;
+  }
+
   .prep-area {
     margin-top: 16px;
   }
