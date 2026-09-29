@@ -25,6 +25,9 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ### 2026-09-29 — 11 PWA
 
+- CI broke once on a docs-only commit (`eb980bf`): Prettier needed two passes to settle a markdown list, and the
+  commit skipped `npm run lint`. Fixed in the next commit. Rule stands: run `npm run lint` before **every** commit,
+  including `[DOC]`.
 - `vite-plugin-pwa`: manifest, auto-updating service worker (production only), and icons generated from
   `public/icons/icon.svg` by `scripts/make-icons.mjs`. The offline reload is e2e-tested on Chromium.
 
