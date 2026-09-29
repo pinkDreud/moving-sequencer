@@ -1,6 +1,6 @@
 # 13 — Swing
 
-Status: planned
+Status: done
 Branch: feat/13-swing
 
 ## Behaviour
@@ -52,17 +52,34 @@ dotted feel. `warp(p)` and its inverse `unwarp(p)` are pure functions in `core/t
 
 ## Acceptance criteria
 
-- [ ] `Song.swing?: number` in [0, 0.75] (missing = 0). `AppState.setSwing(v)` clamps (and rounds to 1 %) the value.
-- [ ] `warp`/`unwarp` are pure, monotonic, exact inverses, and the identity at swing 0 (property-style unit tests,
+- [x] `Song.swing?: number` in [0, 0.75] (missing = 0). `AppState.setSwing(v)` clamps (and rounds to 1 %) the value.
+- [x] `warp`/`unwarp` are pure, monotonic, inverses (up to float error), and the identity at swing 0 (property-style unit tests,
       including for tuplet positions inside a slot).
-- [ ] The scheduler schedules each note at `warp(leaf.start)`. Loop wrap, exactly-once scheduling and live edits all
+- [x] The scheduler schedules each note at `warp(leaf.start)`. Loop wrap, exactly-once scheduling and live edits all
       keep working (the existing scheduler tests run unchanged at swing 0 and gain swing variants).
-- [ ] With an odd number of slots, the last slot stays unswung, so the loop length in time never changes.
-- [ ] `positionAt` uses `unwarp`, so the playhead highlights the right square with swing on.
-- [ ] Transport: a swing slider (0–75 %, step 1) with its value shown, ≥ 44 px touch target, fits 360 px.
-- [ ] Saved and restored with autosave; `parseSong` validates the range.
-- [ ] Changing swing mid-play applies from the cursor: scheduled events stay put, no note is skipped or doubled.
-- [ ] e2e (`?fake-audio`): with swing on, the gaps between notes alternate long/short; at 0 they are equal.
+- [x] With an odd number of slots, the last slot stays unswung, so the loop length in time never changes.
+- [x] `positionAt` uses `unwarp`, so the playhead highlights the right square with swing on.
+- [x] Transport: a swing slider (0–75 %, step 1) with its value shown, ≥ 44 px touch target, fits 360 px.
+- [x] Saved and restored with autosave; `parseSong` validates the range.
+- [x] Changing swing mid-play applies from the cursor: scheduled events stay put, no note is skipped or doubled.
+- [x] e2e (`?fake-audio`): with swing on, the gaps between notes alternate long/short; at 0 they are equal.
+
+## Notes
+
+- The scheduler change is small because the cursor stays unwarped: `from = warp(cursor)` replaces `cursor` wherever
+  slots turn into seconds, and the window end is `unwarp`ed back. `unwarp(length) = length` for both parities, so a
+  wrap still sets the window end to exactly `length`.
+- A reviewer subagent fuzzed the scheduler against the ground truth (400 random nested-tuplet patterns, random swing,
+  tempo, lookahead and tick steps; 300 runs of random live edits, swing/tempo changes, shrinks and late ticks):
+  every note once, in order, at its warped time, never in the past. No high/medium findings.
+- `unwarp(warp(p))` can come back ~1e-14 slots low. In theory a window end could then land a hair before the cursor
+  if a tick came ~1e-14 slots after the previous one; a probe with ticks 1e-15 s apart found no double note, and
+  `AudioContext.currentTime` moves in 128-frame steps, so no guard was added.
+- After a swing (or pattern) change, the playhead for notes already queued (≤ 100 ms) is computed with the new warp
+  and can disagree briefly with what is heard, as with tempo changes.
+- `parseSong` accepts any swing in range (e.g. 0.333); the slider shows it rounded and `setSwing` snaps it to whole
+  percent on the next change.
+- Space toggles play/stop while the slider is focused (a range input has no use for Space).
 
 ## Out of scope
 
