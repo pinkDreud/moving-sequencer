@@ -8,12 +8,18 @@ export interface PointerLike {
   clientY: number;
   /** Buttons held; 0 on a mouse/pen move means the pointerup was lost. */
   buttons?: number;
+  /** Alt/Option held (a drop from the prep area moves instead of copying). */
+  altKey?: boolean;
+}
+
+export interface Modifiers {
+  altKey: boolean;
 }
 
 export interface GestureCallbacks<T> {
   onStart(payload: T, p: Point): void;
-  onMove(p: Point): void;
-  onDrop(p: Point): void;
+  onMove(p: Point, mods: Modifiers): void;
+  onDrop(p: Point, mods: Modifiers): void;
   onCancel(): void;
 }
 
@@ -62,6 +68,7 @@ type State<T> =
   | { kind: 'aborted'; id: number };
 
 const pointOf = (e: PointerLike): Point => ({ x: e.clientX, y: e.clientY });
+const modsOf = (e: PointerLike): Modifiers => ({ altKey: e.altKey ?? false });
 const far = (a: Point, b: Point, limit: number) => Math.hypot(a.x - b.x, a.y - b.y) > limit;
 
 /**
@@ -114,14 +121,14 @@ export function createGesture<T>(
       const p = pointOf(e);
       if (state.kind === 'dragging') {
         if (!state.touch && e.buttons === 0) return cancel();
-        return cb.onMove(p);
+        return cb.onMove(p, modsOf(e));
       }
       state.last = p;
       if (state.touch) {
         if (far(p, state.start, touchSlop)) reset();
       } else if (far(p, state.start, mouseThreshold)) {
         begin(p);
-        cb.onMove(p);
+        cb.onMove(p, modsOf(e));
       }
     },
     up(e) {
@@ -129,7 +136,7 @@ export function createGesture<T>(
       if (state.kind === 'dragging') {
         state = { kind: 'idle' };
         swallowClick = true;
-        cb.onDrop(pointOf(e));
+        cb.onDrop(pointOf(e), modsOf(e));
       } else if (state.kind === 'aborted') {
         state = { kind: 'idle' };
         swallowClick = true;

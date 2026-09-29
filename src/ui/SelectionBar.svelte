@@ -1,13 +1,24 @@
 <script lang="ts">
   import type { AppState } from '../state.svelte';
-  import { deleteSelection, groupSelection, toggleMuteSelection, ungroupSelection } from './actions';
+  import {
+    bothAreas,
+    deleteSelection,
+    groupSelection,
+    selectionArea,
+    toggleMuteSelection,
+    ungroupSelection,
+  } from './actions';
   import { allMuted, canGroup, selectedGroupIds } from './selection';
 
   let { app }: { app: AppState } = $props();
 
-  const muted = $derived(allMuted(app.track, app.selection));
-  const groupable = $derived(canGroup(app.track, app.selection));
-  const hasGroup = $derived(selectedGroupIds(app.track, app.selection).length > 0);
+  // The selection may span the pattern and the prep area.
+  const both = $derived(bothAreas(app));
+  const area = $derived(selectionArea(app));
+  const muted = $derived(allMuted(both, app.selection));
+  // A group can't span two strips: a mixed selection is not groupable.
+  const groupable = $derived(area !== null && canGroup(app.trackOf(area), app.selection));
+  const hasGroup = $derived(selectedGroupIds(both, app.selection).length > 0);
 </script>
 
 {#if app.selection.size > 0}

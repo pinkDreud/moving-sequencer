@@ -108,6 +108,34 @@ describe('Strip rendering', () => {
   });
 });
 
+describe('Strip as the prep area', () => {
+  it('never marks a prep node as playing (a node just moved there from the pattern)', () => {
+    const app = makeApp('A', [], 'P');
+    render(Strip, { app, area: 'prep' });
+    app.playheadId = 'P';
+    flushSync();
+    const prep = screen.getByRole('region', { name: 'Prepare' });
+    expect(prep.querySelector('[data-node-id="P"]')).not.toHaveClass('playing');
+  });
+
+  it('while empty its hint is a button: a keyboard click on it makes the prep area active', () => {
+    const app = makeApp('A');
+    render(Strip, { app, area: 'prep' });
+    const prep = screen.getByRole('region', { name: 'Prepare' });
+    expect(prep).not.toHaveAttribute('aria-current');
+    const hint = within(prep).getByRole('button', { name: /tap here/i });
+    fireEvent.click(hint, { detail: 0 });
+    expect(app.activeArea).toBe('prep');
+    expect(prep).toHaveAttribute('aria-current', 'true');
+  });
+
+  it('has no hint button once it has squares', () => {
+    render(Strip, { app: makeApp('A', [], 'P'), area: 'prep' });
+    const prep = screen.getByRole('region', { name: 'Prepare' });
+    expect(within(prep).queryByRole('button', { name: /tap here/i })).toBeNull();
+  });
+});
+
 describe('Strip selection', () => {
   it('a mouse click selects only this node', () => {
     const { app, byId } = renderStrip(['b', 'c']);

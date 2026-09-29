@@ -200,6 +200,66 @@ describe('AppState', () => {
   });
 });
 
+describe('AppState preparation area', () => {
+  const make = () => new AppState({ song: song(), nextId: createIdGen('n') });
+
+  it('starts empty, outside the song, with the pattern as the active area', () => {
+    const state = make();
+    expect(state.prep.nodes).toEqual([]);
+    expect(state.song.tracks).toHaveLength(1);
+    expect(state.activeArea).toBe('pattern');
+    expect(state.trackOf('pattern')).toBe(state.track);
+    expect(state.trackOf('prep')).toBe(state.prep);
+  });
+
+  it('updateArea("prep") changes the prep track and never the song', () => {
+    const state = make();
+    const before = state.song;
+    state.updateArea('prep', (t) => ({ ...t, nodes: [square('p', 'kick')] }));
+    expect(state.prep.nodes).toEqual([square('p', 'kick')]);
+    expect(state.song).toBe(before);
+    state.updateArea('pattern', (t) => remove(t, ['a']));
+    expect(state.track.nodes.map((n) => n.id)).toEqual(['b', 'c']);
+  });
+
+  it('keeps selected prep nodes when the pattern changes, and drops removed ones from either area', () => {
+    const state = make();
+    state.prep = { id: 'prep', nodes: [square('p', 'kick'), square('q', 'hat')] };
+    state.select(['a', 'p', 'q']);
+    state.updateTrack((t) => setSound(t, ['a'], 'clap'));
+    expect([...state.selection].sort()).toEqual(['a', 'p', 'q']);
+    state.updateArea('prep', (t) => remove(t, ['q']));
+    expect([...state.selection].sort()).toEqual(['a', 'p']);
+  });
+
+  it('setTracks replaces both areas at once, keeping ids that moved between them selected', () => {
+    const state = make();
+    state.select(['a']);
+    state.setTracks({
+      pattern: remove(state.track, ['a']),
+      prep: { id: 'prep', nodes: [square('a', 'kick')] },
+    });
+    expect(state.track.nodes.map((n) => n.id)).toEqual(['b', 'c']);
+    expect(state.prep.nodes.map((n) => n.id)).toEqual(['a']);
+    expect([...state.selection]).toEqual(['a']);
+  });
+
+  it('setTracks keeps the song object when the pattern is unchanged', () => {
+    const state = make();
+    const before = state.song;
+    state.setTracks({ pattern: state.track, prep: { id: 'prep', nodes: [square('p', null)] } });
+    expect(state.song).toBe(before);
+  });
+
+  it('removeSound also silences prep squares', () => {
+    const state = make();
+    state.addSound({ id: 'rec-a', name: 'Rec A', color: '#123', source: 'recording' });
+    state.prep = { id: 'prep', nodes: [square('p', 'rec-a')] };
+    state.removeSound('rec-a');
+    expect(state.prep.nodes[0]).toEqual(square('p', null));
+  });
+});
+
 describe('watchSong', () => {
   it('reports the current song, then every new song object, until stopped', () => {
     const state = new AppState({ song: song(), nextId: createIdGen('n') });

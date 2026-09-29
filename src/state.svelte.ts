@@ -11,6 +11,7 @@ import {
   type Track,
   type TempoFactor,
 } from './core/model';
+import type { Area } from './core/dropTarget';
 import { clearSound, nodeIds } from './core/ops';
 import { SWING_MAX } from './core/timing';
 
@@ -45,6 +46,13 @@ export class AppState {
   playing = $state(false);
   /** Leaf currently under the playhead, updated every animation frame while playing; null when stopped. */
   playheadId: NodeId | null = $state(null);
+  /**
+   * The preparation area: a scratch track that never plays and is never saved (kept out of `song`, so the
+   * scheduler and autosave don't see it). Its ids come from the same `nextId`, so they are unique app-wide.
+   */
+  prep: Track = $state.raw({ id: 'prep', nodes: [] });
+  /** Where a palette tap with nothing selected appends: the strip tapped last. */
+  activeArea: Area = $state('pattern');
   readonly nextId: IdGen;
 
   /** `sounds` defaults to the kit; at startup it also holds the restored recordings. */
@@ -62,10 +70,34 @@ export class AppState {
 
   /** Applies a pure op to the first track; a no-op (same object back) leaves the song untouched. */
   updateTrack(update: (track: Track) => Track): void {
-    const track = update(this.track);
-    if (track === this.track) return;
-    this.song = { ...this.song, tracks: [track, ...this.song.tracks.slice(1)] };
-    const alive = new Set(nodeIds(track));
+    this.setTracks({ pattern: update(this.track) });
+  }
+
+  trackOf(area: Area): Track {
+    return area === 'pattern' ? this.track : this.prep;
+  }
+
+  /** Applies a pure op to the pattern or the preparation area. */
+  updateArea(area: Area, update: (track: Track) => Track): void {
+    this.setTracks({ [area]: update(this.trackOf(area)) });
+  }
+
+  /**
+   * Replaces the pattern and/or the prep track at once (a drop between them), then drops ids that no longer exist
+   * from the selection. Setting both before pruning keeps a node that moved between the areas selected.
+   */
+  setTracks({ pattern, prep }: { pattern?: Track; prep?: Track }): void {
+    let changed = false;
+    if (pattern && pattern !== this.track) {
+      this.song = { ...this.song, tracks: [pattern, ...this.song.tracks.slice(1)] };
+      changed = true;
+    }
+    if (prep && prep !== this.prep) {
+      this.prep = prep;
+      changed = true;
+    }
+    if (!changed) return;
+    const alive = new Set([...nodeIds(this.track), ...nodeIds(this.prep)]);
     if ([...this.selection].some((id) => !alive.has(id))) {
       this.selection = new Set([...this.selection].filter((id) => alive.has(id)));
     }
@@ -122,6 +154,7 @@ export class AppState {
     if (!this.soundById(id)) return;
     const tracks = this.song.tracks.map((t) => clearSound(t, id));
     if (tracks.some((t, i) => t !== this.song.tracks[i])) this.song = { ...this.song, tracks };
+    this.prep = clearSound(this.prep, id);
     this.sounds = this.sounds.filter((s) => s.id !== id);
   }
 }

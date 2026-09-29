@@ -37,6 +37,21 @@ describe('mouse / pen', () => {
     expect(gesture.dragging).toBe(false);
   });
 
+  it('reports whether Alt is held on moves and at the drop (Alt at release decides copy vs move)', () => {
+    const alts: string[] = [];
+    const gesture = createGesture<string>({
+      onStart: () => undefined,
+      onMove: (_p, { altKey }) => alts.push(`move ${altKey}`),
+      onDrop: (_p, { altKey }) => alts.push(`drop ${altKey}`),
+      onCancel: () => undefined,
+    });
+    gesture.down(at(0, 0), 'A');
+    gesture.move({ ...at(10, 0), altKey: true });
+    gesture.move(at(20, 0));
+    gesture.up({ ...at(20, 0), altKey: true });
+    expect(alts).toEqual(['move true', 'move false', 'drop true']);
+  });
+
   it('a click without movement never drags and its click is not consumed', () => {
     const { gesture, calls } = setup();
     gesture.down(at(0, 0), 'A');

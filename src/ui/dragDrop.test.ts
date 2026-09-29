@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import type { Drop } from '../core/dropTarget';
+import type { Area, AreaDrop, Drop } from '../core/dropTarget';
+import { createIdGen } from '../core/model';
 import { parseTrack, shape } from '../core/test-helpers';
-import { applyDrop, dragIds, dropResult, readLayout } from './dragDrop';
+import {
+  applyAreaDrop,
+  applyDrop,
+  areaDropResult,
+  copies,
+  dragIds,
+  dropResult,
+  readLayout,
+} from './dragDrop';
 import { makeApp } from './test-helpers';
 
 /** Builds the Strip DOM shape (section > nodes; group > frame + .children > nodes) with fake rects. */
@@ -107,5 +116,122 @@ describe('applyDrop', () => {
     applyDrop(app, ['B'], { kind: 'delete' });
     expect(shape(app.track)).toBe('A C');
     expect(app.selection.size).toBe(0);
+  });
+});
+
+describe('dragIds across areas', () => {
+  it('leaves out selected ids that are not in the pressed track (a mixed selection drags one area)', () => {
+    const track = parseTrack('A B C');
+    expect(dragIds(track, new Set(['A', 'P', 'C']), 'A').sort()).toEqual(['A', 'C']);
+  });
+});
+
+describe('areaDropResult', () => {
+  const tracks = () => ({ pattern: parseTrack('A B C', 'pat'), prep: parseTrack('P G[Q R]', 'prep') });
+  const at = (area: Area, parentId: string | null, index: number): AreaDrop => ({
+    area,
+    kind: 'move',
+    target: { parentId, index },
+    indicator: { x: 0, top: 0, bottom: 0 },
+  });
+  const onto = (area: Area, targetId: string): AreaDrop => ({
+    area,
+    kind: 'combine',
+    targetId,
+    rect: { left: 0, top: 0, right: 0, bottom: 0 },
+  });
+  const run = (from: Area, ids: string[], drop: AreaDrop, alt = false) => {
+    const before = tracks();
+    const r = areaDropResult(before, from, ids, drop, { alt, nextId: createIdGen('n') });
+    return { before, r, pattern: shape(r.tracks.pattern), prep: shape(r.tracks.prep) };
+  };
+
+  it('prep → pattern copies with fresh ids; the prep area is unchanged; the copies are placed', () => {
+    const { before, r, pattern } = run('prep', ['G'], at('pattern', null, 1));
+    expect(pattern).toBe('A n1[n2 n3] B C');
+    expect(r.tracks.prep).toBe(before.prep);
+    expect(r.placed).toEqual(['n1']);
+  });
+
+  it('prep → pattern with Alt moves', () => {
+    const { pattern, prep, r } = run('prep', ['P'], at('pattern', null, 3), true);
+    expect(pattern).toBe('A B C P');
+    expect(prep).toBe('G[Q R]');
+    expect(r.placed).toBeNull();
+  });
+
+  it('pattern → prep moves (Alt or not)', () => {
+    expect(run('pattern', ['B'], at('prep', null, 0))).toMatchObject({ pattern: 'A C', prep: 'B P G[Q R]' });
+    expect(run('pattern', ['B'], at('prep', null, 0), true)).toMatchObject({
+      pattern: 'A C',
+      prep: 'B P G[Q R]',
+    });
+  });
+
+  it('inside one area it moves, as in 08 (Alt does not copy)', () => {
+    const r1 = run('pattern', ['A'], at('pattern', null, 3), true);
+    expect(r1).toMatchObject({ pattern: 'B C A' });
+    expect(r1.r.tracks.prep).toBe(r1.before.prep);
+    expect(run('prep', ['P'], at('prep', 'G', 1))).toMatchObject({ prep: 'G[Q P R]' });
+  });
+
+  it('combines across areas: a prep square copied onto a pattern square groups them', () => {
+    expect(run('prep', ['P'], onto('pattern', 'B'))).toMatchObject({
+      pattern: 'A n2[B n1] C',
+      prep: 'P G[Q R]',
+    });
+  });
+
+  it('delete removes the dragged nodes from the source area', () => {
+    expect(run('prep', ['P'], { kind: 'delete' })).toMatchObject({ pattern: 'A B C', prep: 'G[Q R]' });
+    expect(run('pattern', ['C'], { kind: 'delete' })).toMatchObject({ pattern: 'A B', prep: 'P G[Q R]' });
+  });
+
+  it('returns the same tracks when the drop changes nothing', () => {
+    const { before, r } = run('pattern', ['A'], at('pattern', null, 0));
+    expect(r.tracks.pattern).toBe(before.pattern);
+    expect(r.tracks.prep).toBe(before.prep);
+  });
+});
+
+describe('copies', () => {
+  const drop = (area: Area): AreaDrop => ({
+    area,
+    kind: 'move',
+    target: { parentId: null, index: 0 },
+    indicator: { x: 0, top: 0, bottom: 0 },
+  });
+
+  it('only a drop from the prep area into the pattern without Alt copies', () => {
+    expect(copies('prep', drop('pattern'), false)).toBe(true);
+    expect(copies('prep', drop('pattern'), true)).toBe(false);
+    expect(copies('prep', drop('prep'), false)).toBe(false);
+    expect(copies('pattern', drop('prep'), false)).toBe(false);
+    expect(copies('prep', { kind: 'delete' }, false)).toBe(false);
+  });
+});
+
+describe('applyAreaDrop', () => {
+  const into = (area: Area, index: number): AreaDrop => ({
+    area,
+    kind: 'move',
+    target: { parentId: null, index },
+    indicator: { x: 0, top: 0, bottom: 0 },
+  });
+
+  it('copies into the pattern and selects the copies', () => {
+    const app = makeApp('A B', ['P'], 'P Q');
+    applyAreaDrop(app, 'prep', ['P'], into('pattern', 2), false);
+    expect(shape(app.track)).toBe('A B n1');
+    expect(shape(app.prep)).toBe('P Q');
+    expect([...app.selection]).toEqual(['n1']);
+  });
+
+  it('moves between areas keeping the moved nodes selected', () => {
+    const app = makeApp('A B', ['B']);
+    applyAreaDrop(app, 'pattern', ['B'], into('prep', 0), false);
+    expect(shape(app.track)).toBe('A');
+    expect(shape(app.prep)).toBe('B');
+    expect([...app.selection]).toEqual(['B']);
   });
 });
