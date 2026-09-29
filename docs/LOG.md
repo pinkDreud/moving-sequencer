@@ -4,8 +4,9 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Current state
 
-- **Phase:** 00–05 done and merged (154 tests). The pure core and the scheduler are complete; nothing audible or visible yet.
-- **Next step:** app-state skeleton (`src/state.svelte.ts`, kit sound metadata), then 06 audio/transport ∥ 07 strip UI
+- **Phase:** 00–05 + app-state skeleton done (163 tests). Two worktree agents are running:
+  06 audio/transport (`feat/06-audio-transport`) and 07 strip UI (`feat/07-strip-ui`).
+- **Next step:** review and merge 06 and 07 (expect a small conflict in `App.svelte`), then 08 drag & drop
 - **Blockers:** none. No deployment: Pages is unavailable for a private repo on the free plan, and the user chose "no deploy for now".
 
 ## Documentation index
@@ -19,6 +20,13 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-29 — app-state skeleton
+
+- `src/state.svelte.ts`: `AppState` (song in `$state.raw`, selection, `playing`, `playheadId`, `updateTrack(op)`,
+  bpm/slot setters), `defaultSong`, `randomIdGen`. `src/audio/sounds.ts`: `KIT` metadata (ids, names, colors).
+- Contract between 06 and 07: 06 writes `app.playing` and `app.playheadId`; 07 only reads them.
+- ESLint `svelte/prefer-svelte-reactivity` is off: our state is immutable values in `$state.raw`.
 
 ### 2026-09-29 — 04–05 timeline + scheduler merged
 
