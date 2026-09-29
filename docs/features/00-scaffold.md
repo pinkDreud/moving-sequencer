@@ -13,7 +13,8 @@ The project builds, tests and lints. It contains no features yet. The page shows
 - [x] `npm run test:e2e` passes a smoke test (page loads, title visible) on chromium, webkit, mobile-safari, mobile-chrome.
 - [x] `npm run build` produces `dist/` with base path `/moving-sequencer/` for GitHub Pages.
 - [x] CI workflow runs verify + e2e + build on push and PR.
-- [~] ~~Deploy workflow publishes `dist/` to GitHub Pages~~. Removed: Pages is not available for a private repo on the free plan.
+- [x] Deploy workflow publishes `dist/` to GitHub Pages after CI succeeds on `main` (removed while the repo was
+      private, restored once it went public).
 - [x] `src/core/model.ts` holds the shared types from PLAN.md §2.1, so features 01 and 04 can proceed in parallel.
 
 ## Files

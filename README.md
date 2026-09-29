@@ -24,7 +24,8 @@ The microphone needs a secure page: `localhost` or HTTPS (see `npm run dev:https
 **Install**: it's a PWA. Add it to the home screen (phone) or install it (desktop Chrome/Edge), and it works offline
 after the first visit. This needs HTTPS or localhost.
 
-No public deployment yet. To try it on a phone, run the dev server on your LAN (see below).
+**Live:** https://pinkdreud.github.io/moving-sequencer/ (deployed from `main` after CI passes; HTTPS, so the mic and
+installing work).
 
 ## Development
 

@@ -11,7 +11,7 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
   (trim/normalize, speaker vs earpiece after recording on iOS); autosave surviving tab close on iOS; private mode.
   mic over `dev:https`) and a decision about deployment/multi-track.
   a real device and try touch drag on iOS.
-- **Blockers:** none. No deployment: Pages is unavailable for a private repo on the free plan, and the user chose "no deploy for now".
+- **Blockers:** none. Live at https://pinkdreud.github.io/moving-sequencer/ (Pages, deployed after green CI on `main`).
 
 ## Documentation index
 
@@ -24,6 +24,12 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-29 — public repo, Pages deploy restored
+
+- The user made the repo public. Pages is enabled through the API (`build_type=workflow`), and `deploy.yml` is
+  restored from history unchanged: it runs after CI succeeds on `main`, or by hand (`workflow_dispatch`).
+- The site is HTTPS, so mic recording and PWA install can now be tested on a phone without `dev:https`.
 
 ### 2026-09-29 — license, credit, history rewrite
 

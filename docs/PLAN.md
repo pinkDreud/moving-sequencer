@@ -22,20 +22,20 @@ A small web step sequencer.
 
 ### Decisions log (from user Q&A, 2026-09-29)
 
-| Topic               | Decision                                                                                                                                                                        |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stack               | TypeScript (strict) + Vite + Svelte 5 (runes) + Web Audio API                                                                                                                   |
-| Group span          | always 1 slot in v1; model keeps `span` field (fixed to 1) for later                                                                                                            |
-| Group UX            | multi-select → Group button; Ungroup; drag into/out of groups                                                                                                                   |
-| Sounds              | built-in kit (synthesized at startup) + mic recording                                                                                                                           |
-| Timing              | BPM + slot value (4 = quarter, 8 = eighth, 16 = sixteenth)                                                                                                                      |
-| Playback            | loop forever                                                                                                                                                                    |
-| Live edit semantics | playhead follows **position in time** (tape-like), not the square                                                                                                               |
-| Multi-move          | temporary multi-select, not grouping; a group always drags as one block                                                                                                         |
-| Remove              | drag off the strip = delete (pattern shrinks); mute = silent (length kept)                                                                                                      |
-| Tap                 | tap/click = select; SelectionBar offers Mute, Sound, Group, Ungroup, Delete                                                                                                     |
-| Persistence         | autosave to IndexedDB (song + recordings)                                                                                                                                       |
-| CI/CD               | GitHub Actions (lint, typecheck, unit, e2e). **No deployment for now**: GitHub Pages needs a public repo or a paid plan. Phone testing uses `npm run dev -- --host` on the LAN. |
+| Topic               | Decision                                                                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Stack               | TypeScript (strict) + Vite + Svelte 5 (runes) + Web Audio API                                                             |
+| Group span          | always 1 slot in v1; model keeps `span` field (fixed to 1) for later                                                      |
+| Group UX            | multi-select → Group button; Ungroup; drag into/out of groups                                                             |
+| Sounds              | built-in kit (synthesized at startup) + mic recording                                                                     |
+| Timing              | BPM + slot value (4 = quarter, 8 = eighth, 16 = sixteenth)                                                                |
+| Playback            | loop forever                                                                                                              |
+| Live edit semantics | playhead follows **position in time** (tape-like), not the square                                                         |
+| Multi-move          | temporary multi-select, not grouping; a group always drags as one block                                                   |
+| Remove              | drag off the strip = delete (pattern shrinks); mute = silent (length kept)                                                |
+| Tap                 | tap/click = select; SelectionBar offers Mute, Sound, Group, Ungroup, Delete                                               |
+| Persistence         | autosave to IndexedDB (song + recordings)                                                                                 |
+| CI/CD               | GitHub Actions (lint, typecheck, unit, e2e) + GitHub Pages deploy after green CI on `main` (repo public since 2026-09-29) |
 
 ## 2. Architecture
 
