@@ -69,7 +69,7 @@ export function createScheduler({
   function playable(): { timeline: Timeline; sps: number } | null {
     const song = getSong();
     const timeline = timelineOf(song.tracks[0]);
-    const sps = secondsPerSlot(song.bpm, song.slotValue);
+    const sps = secondsPerSlot(song.bpm, song.slotValue, song.tempoFactor);
     return timeline.length > 0 && sps > 0 && Number.isFinite(sps) ? { timeline, sps } : null;
   }
 

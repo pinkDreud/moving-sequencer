@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/svelte';
 import { flushSync } from 'svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import { FakeEngine } from '../audio/engine';
@@ -125,6 +125,19 @@ describe('slot value selector', () => {
 });
 
 describe('Space', () => {
+  it('offers ½×, 1× and 2× speed with 1× checked, and sets the factor', async () => {
+    const { app } = setup();
+    const speed = screen.getByRole('radiogroup', { name: 'Speed' });
+    const radio = (name: string) => within(speed).getByRole('radio', { name }) as HTMLInputElement;
+    expect(radio('1×').checked).toBe(true);
+    await fireEvent.click(radio('2×'));
+    expect(app.song.tempoFactor).toBe(2);
+    expect(radio('2×').checked).toBe(true);
+    await fireEvent.click(radio('½×'));
+    expect(app.song.tempoFactor).toBe(0.5);
+    expect(app.song.bpm).toBe(110);
+  });
+
   it('toggles play/stop when focus is on the page', async () => {
     const s = setup();
     expect(await pressSpace()).toBe(false); // default prevented: the page must not scroll

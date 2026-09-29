@@ -3,6 +3,7 @@
 import {
   group,
   square,
+  TEMPO_FACTORS,
   type SeqNode,
   type SlotValue,
   type Song,
@@ -79,12 +80,15 @@ function parseTrack(value: unknown, ids: Set<string>): Track {
 export function parseSong(data: unknown): Song | null {
   try {
     if (!isObject(data) || data.version !== 1) return null;
-    const { bpm, slotValue, tracks } = data;
+    const { bpm, slotValue, tempoFactor, tracks } = data;
     if (typeof bpm !== 'number' || !Number.isInteger(bpm) || bpm < 30 || bpm > 300) return null;
     const slot = SLOT_VALUES.find((v) => v === slotValue);
     if (slot === undefined || !Array.isArray(tracks) || tracks.length === 0) return null;
+    const factor = TEMPO_FACTORS.find((f) => f === tempoFactor);
+    if (tempoFactor !== undefined && factor === undefined) return null;
     const ids = new Set<string>();
-    return { version: 1, bpm, slotValue: slot, tracks: each(tracks, (t) => parseTrack(t, ids)) };
+    const song: Song = { version: 1, bpm, slotValue: slot, tracks: each(tracks, (t) => parseTrack(t, ids)) };
+    return factor === undefined ? song : { ...song, tempoFactor: factor };
   } catch (error) {
     if (error instanceof Invalid) return null;
     throw error;

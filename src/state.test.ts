@@ -101,6 +101,16 @@ describe('AppState', () => {
     expect(new AppState({ song: song(), nextId: createIdGen('n') }).sounds).toBe(KIT);
   });
 
+  it('sets the tempo factor, keeping the song object when it does not change', () => {
+    const state = new AppState({ song: song(), nextId: createIdGen('n') });
+    const before = state.song;
+    state.setTempoFactor(1);
+    expect(state.song).toBe(before);
+    state.setTempoFactor(2);
+    expect(state.song.tempoFactor).toBe(2);
+    expect(state.song.bpm).toBe(before.bpm);
+  });
+
   it('sets the slot value', () => {
     const state = new AppState({ song: song(), nextId: createIdGen('n') });
     state.setSlotValue(16);

@@ -34,6 +34,9 @@ A small web step sequencer.
 | Multi-move          | temporary multi-select, not grouping; a group always drags as one block                                                   |
 | Remove              | drag off the strip = delete (pattern shrinks); mute = silent (length kept)                                                |
 | Tap                 | tap/click = select; SelectionBar offers Mute, Sound, Group, Ungroup, Delete                                               |
+| Tempo ½×/2×         | a separate multiplier (½×/1×/2×), BPM unchanged, applies at once (decided 2026-09-29)                                     |
+| Swing               | pairs of slots, time-warp (groups swing along); 0–75 %                                                                    |
+| Prep area           | a second, never-played strip; drag to the pattern copies (Alt moves); not saved                                           |
 | Persistence         | autosave to IndexedDB (song + recordings)                                                                                 |
 | CI/CD               | GitHub Actions (lint, typecheck, unit, e2e) + GitHub Pages deploy after green CI on `main` (repo public since 2026-09-29) |
 
