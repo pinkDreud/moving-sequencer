@@ -12,6 +12,7 @@ import {
   type TempoFactor,
 } from './core/model';
 import { clearSound, nodeIds } from './core/ops';
+import { SWING_MAX } from './core/timing';
 
 const BPM_MIN = 30;
 const BPM_MAX = 300;
@@ -93,6 +94,13 @@ export class AppState {
 
   setTempoFactor(tempoFactor: TempoFactor): void {
     if (tempoFactor !== (this.song.tempoFactor ?? 1)) this.song = { ...this.song, tempoFactor };
+  }
+
+  /** Swing as a fraction of a slot, clamped to [0, SWING_MAX] and rounded to whole percent (the slider's grid). */
+  setSwing(swing: number): void {
+    if (Number.isNaN(swing)) return;
+    const clamped = Math.round(Math.min(SWING_MAX, Math.max(0, swing)) * 100) / 100;
+    if (clamped !== (this.song.swing ?? 0)) this.song = { ...this.song, swing: clamped };
   }
 
   setSlotValue(slotValue: SlotValue): void {

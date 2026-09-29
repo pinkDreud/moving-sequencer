@@ -26,10 +26,16 @@
     if (slotValue) app.setSlotValue(slotValue);
   }
 
-  /** Controls where Space types or opens a list; everywhere else (buttons included) it means play/stop. */
+  const swingPercent = $derived(Math.round((app.song.swing ?? 0) * 100));
+
+  /**
+   * Controls where Space types, picks or opens a list; everywhere else (buttons and the swing slider included)
+   * it means play/stop.
+   */
   function isTextEntry(target: EventTarget | null): boolean {
     return (
-      target instanceof HTMLElement && (target.isContentEditable || target.matches('input, textarea, select'))
+      target instanceof HTMLElement &&
+      (target.isContentEditable || target.matches('input:not([type="range"]), textarea, select'))
     );
   }
 
@@ -90,6 +96,23 @@
           <span>{speed.label}</span>
         </label>
       {/each}
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="{id}-swing">Swing</label>
+    <div class="swing">
+      <input
+        id="{id}-swing"
+        type="range"
+        min="0"
+        max="75"
+        step="1"
+        value={swingPercent}
+        aria-valuetext="{swingPercent} %"
+        oninput={(event) => app.setSwing(event.currentTarget.valueAsNumber / 100)}
+      />
+      <span class="swing-value" aria-hidden="true">{swingPercent} %</span>
     </div>
   </div>
 
@@ -221,6 +244,31 @@
 
   .bpm {
     width: 5.5em;
+  }
+
+  .swing {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+  }
+
+  /* The whole 44 px-high box takes the pointer, not only the thin track drawn by the browser. */
+  .swing input {
+    width: 112px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .swing-value {
+    min-width: 3.2em;
+    color: var(--fg);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
   }
 
   /* Safari ignores the height of a natively styled select; draw our own arrow instead. */

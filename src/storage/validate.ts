@@ -11,6 +11,7 @@ import {
   type Track,
 } from '../core/model';
 import { normalize } from '../core/ops';
+import { SWING_MAX } from '../core/timing';
 
 const SLOT_VALUES: readonly SlotValue[] = [4, 8, 16];
 
@@ -80,15 +81,19 @@ function parseTrack(value: unknown, ids: Set<string>): Track {
 export function parseSong(data: unknown): Song | null {
   try {
     if (!isObject(data) || data.version !== 1) return null;
-    const { bpm, slotValue, tempoFactor, tracks } = data;
+    const { bpm, slotValue, tempoFactor, swing, tracks } = data;
     if (typeof bpm !== 'number' || !Number.isInteger(bpm) || bpm < 30 || bpm > 300) return null;
     const slot = SLOT_VALUES.find((v) => v === slotValue);
     if (slot === undefined || !Array.isArray(tracks) || tracks.length === 0) return null;
     const factor = TEMPO_FACTORS.find((f) => f === tempoFactor);
     if (tempoFactor !== undefined && factor === undefined) return null;
+    if (swing !== undefined && !(typeof swing === 'number' && swing >= 0 && swing <= SWING_MAX)) return null;
     const ids = new Set<string>();
     const song: Song = { version: 1, bpm, slotValue: slot, tracks: each(tracks, (t) => parseTrack(t, ids)) };
-    return factor === undefined ? song : { ...song, tempoFactor: factor };
+    // Missing optional fields stay missing, so older saves round-trip unchanged.
+    if (factor !== undefined) song.tempoFactor = factor;
+    if (swing !== undefined) song.swing = swing;
+    return song;
   } catch (error) {
     if (error instanceof Invalid) return null;
     throw error;
