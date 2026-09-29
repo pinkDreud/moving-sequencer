@@ -36,7 +36,7 @@ describe('groupOrJoin: joining an existing group', () => {
   });
 
   it('keeps timeline order when several squares join from both sides', () => {
-    expect(run('A B G[C D] E F', ['A', 'C', 'F', 'B'])).toEqual({ shape: 'G[A B C D] E F', groupId: 'G' });
+    expect(run('A B G[C D] E F', ['A', 'C', 'F', 'B'])).toEqual({ shape: 'G[A B C D F] E', groupId: 'G' });
     expect(run('A G[C D] E F', ['A', 'G', 'E', 'F'])).toEqual({ shape: 'G[A C D E F]', groupId: 'G' });
   });
 

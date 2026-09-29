@@ -1,7 +1,7 @@
 // Glue between the DOM, the pure drop hit-testing and the ops, for drag & drop in the Strip.
 import type { Drop, LayoutItem } from '../core/dropTarget';
-import type { NodeId, Track } from '../core/model';
-import { findLocation, move, remove } from '../core/ops';
+import type { IdGen, NodeId, Track } from '../core/model';
+import { combine, findLocation, move, remove } from '../core/ops';
 import type { AppState } from '../state.svelte';
 
 /**
@@ -41,8 +41,19 @@ export function dragIds(track: Track, selection: ReadonlySet<NodeId>, pressed: N
   return [pressed];
 }
 
-/** Applies a drop: move the dragged nodes, or delete them. */
+/** The track after a drop; the same track when the drop changes nothing. `nextId` names a group it creates. */
+export function dropResult(
+  track: Track,
+  ids: readonly NodeId[],
+  drop: Drop,
+  nextId: IdGen = () => '__probe__',
+): Track {
+  if (drop.kind === 'delete') return remove(track, ids);
+  if (drop.kind === 'combine') return combine(track, ids, drop.targetId, nextId);
+  return move(track, ids, drop.target);
+}
+
+/** Applies a drop: move, combine into a group, or delete. */
 export function applyDrop(app: AppState, ids: readonly NodeId[], drop: Drop): void {
-  if (drop.kind === 'delete') app.updateTrack((t) => remove(t, ids));
-  else app.updateTrack((t) => move(t, ids, drop.target));
+  app.updateTrack((t) => dropResult(t, ids, drop, app.nextId));
 }

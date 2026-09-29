@@ -83,11 +83,18 @@ describe('selection actions', () => {
   });
 
   it('groupSelection does nothing when the selection cannot be grouped', () => {
-    const app = makeApp('A G[B C]', ['A', 'B']);
+    const app = makeApp('G[A B] H[C D]', ['A', 'C']);
     const song = app.song;
     groupSelection(app);
     expect(app.song).toBe(song);
-    expect(selected(app)).toEqual(['A', 'B']);
+    expect(selected(app)).toEqual(['A', 'C']);
+  });
+
+  it('groupSelection adds outside squares to the selected group and selects that group', () => {
+    const app = makeApp('A G[B C] D', ['G', 'D']);
+    groupSelection(app);
+    expect(shape(app.track)).toBe('A G[B C D]');
+    expect(selected(app)).toEqual(['G']);
   });
 
   it('ungroupSelection ungroups every selected group and selects their former children', () => {

@@ -1,10 +1,10 @@
 <script lang="ts">
   import { dropTarget, type Drop, type Point } from '../core/dropTarget';
   import type { NodeId } from '../core/model';
-  import { findNode, move } from '../core/ops';
+  import { findNode } from '../core/ops';
   import type { AppState } from '../state.svelte';
   import { createGesture } from './drag';
-  import { applyDrop, dragIds, readLayout } from './dragDrop';
+  import { applyDrop, dragIds, dropResult, readLayout } from './dragDrop';
   import NodeView from './NodeView.svelte';
   import { selectMode } from './selection';
 
@@ -20,10 +20,9 @@
     return stripEl ? dropTarget(p, readLayout(stripEl), stripEl.getBoundingClientRect()) : null;
   }
 
-  /** A drop that would change nothing (onto the dragged nodes themselves) draws no insertion line. */
+  /** A drop that would change nothing (onto the dragged nodes themselves) draws no indicator. */
   function changes(drop: Drop | null): boolean {
-    if (drop?.kind !== 'move') return drop !== null;
-    return move(app.track, [...dragged], drop.target) !== app.track;
+    return drop !== null && dropResult(app.track, [...dragged], drop) !== app.track;
   }
 
   function end(): void {
@@ -152,6 +151,16 @@
   {#if drag.drop?.kind === 'move' && changes(drag.drop)}
     {@const { x, top, bottom } = drag.drop.indicator}
     <div class="drop-indicator" style:left="{x}px" style:top="{top}px" style:height="{bottom - top}px"></div>
+  {:else if drag.drop?.kind === 'combine' && changes(drag.drop)}
+    {@const { left, top, right, bottom } = drag.drop.rect}
+    <!-- 4 px outside the target square, so the outline doesn't cover it. -->
+    <div
+      class="drop-combine"
+      style:left="{left - 4}px"
+      style:top="{top - 4}px"
+      style:width="{right - left + 8}px"
+      style:height="{bottom - top + 8}px"
+    ></div>
   {/if}
   <div
     class="ghost"
@@ -195,6 +204,16 @@
     border-radius: 2px;
     background: var(--accent);
     box-shadow: 0 0 8px var(--accent);
+    pointer-events: none;
+  }
+
+  /* "Group with this square": an outline around the target, instead of an insertion line. */
+  .drop-combine {
+    position: fixed;
+    z-index: 10;
+    border: 3px dashed var(--accent);
+    border-radius: 12px;
+    box-shadow: 0 0 10px var(--accent);
     pointer-events: none;
   }
 

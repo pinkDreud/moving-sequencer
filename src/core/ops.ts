@@ -248,3 +248,76 @@ export function ungroup(track: Track, groupId: NodeId): Track {
     ),
   );
 }
+
+/**
+ * What the Group button does. If the selection contains one group (or squares inside one) plus nodes right
+ * outside it, those nodes join that group in timeline order. Otherwise it is `group`: a new group, which nests
+ * when every selected node sits inside the same group.
+ */
+export function groupOrJoin(
+  track: Track,
+  ids: readonly NodeId[],
+  nextId: IdGen,
+): { track: Track; groupId: NodeId | null } {
+  const selected = new Set(ids);
+  const entries = walk(track.nodes, null, (n) => selected.has(n.id)).filter((e) => selected.has(e.node.id));
+  const unchanged = { track, groupId: null };
+  if (entries.length < 2) return unchanged;
+  const parents = [...new Set(entries.map((e) => e.parentId))];
+  if (parents.length === 1) {
+    const groups = entries.filter((e) => e.node.kind === 'group');
+    const [only] = groups;
+    if (groups.length !== 1 || !only) return group(track, ids, nextId);
+    return join(
+      track,
+      only.node.id,
+      entries.filter((e) => e !== only).map((e) => e.node.id),
+    );
+  }
+  if (parents.length === 2) {
+    const [a = null, b = null] = parents;
+    // One parent is a group sitting directly in the other: the outside nodes join it.
+    const pairs: [NodeId | null, NodeId | null][] = [
+      [a, b],
+      [b, a],
+    ];
+    for (const [inner, outer] of pairs) {
+      if (inner !== null && findLocation(track, inner)?.parentId === outer) {
+        return join(
+          track,
+          inner,
+          entries.filter((e) => e.parentId === outer).map((e) => e.node.id),
+        );
+      }
+    }
+  }
+  return unchanged;
+}
+
+/** Moves outside nodes into `groupId`: those before it go to its start, those after it to its end. */
+function join(track: Track, groupId: NodeId, ids: NodeId[]): { track: Track; groupId: NodeId } {
+  const order = nodeIds(track);
+  const at = order.indexOf(groupId);
+  const before = ids.filter((id) => order.indexOf(id) < at);
+  const after = ids.filter((id) => order.indexOf(id) > at);
+  let out = move(track, before, { parentId: groupId, index: 0 });
+  const g = findNode(out, groupId);
+  out = move(out, after, { parentId: groupId, index: g?.kind === 'group' ? g.children.length : 0 });
+  return { track: out, groupId };
+}
+
+/**
+ * Drops `ids` onto the square `targetId`: they are placed right after it and grouped with it (`groupOrJoin`, so a
+ * dragged group absorbs the target). Unchanged when the target is one of the dragged nodes or inside one.
+ */
+export function combine(track: Track, ids: readonly NodeId[], targetId: NodeId, nextId: IdGen): Track {
+  const selected = new Set(ids);
+  const target = findLocation(track, targetId);
+  if (!target) return track;
+  for (let id: NodeId | null = targetId; id !== null; id = findLocation(track, id)?.parentId ?? null) {
+    if (selected.has(id)) return track;
+  }
+  const placed = move(track, ids, { parentId: target.parentId, index: target.index + 1 });
+  const result = groupOrJoin(placed, [targetId, ...ids], nextId);
+  return result.groupId === null ? track : result.track;
+}

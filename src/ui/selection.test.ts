@@ -64,10 +64,14 @@ describe('canGroup', () => {
     expect(canGroup(parseTrack('A G[B C D]'), new Set(['B', 'C']))).toBe(true);
   });
 
-  it('is false for fewer than two nodes, different parents, or every child of a group', () => {
+  it('is false for fewer than two nodes, unrelated places, or every child of a group', () => {
     expect(canGroup(parseTrack('A B'), new Set(['A']))).toBe(false);
-    expect(canGroup(parseTrack('A G[B C]'), new Set(['A', 'B']))).toBe(false);
+    expect(canGroup(parseTrack('G[A B] H[C D]'), new Set(['A', 'C']))).toBe(false);
     expect(canGroup(parseTrack('A G[B C]'), new Set(['B', 'C']))).toBe(false);
+  });
+
+  it('is true for a square next to a group plus a square inside it (it joins the group)', () => {
+    expect(canGroup(parseTrack('A G[B C]'), new Set(['A', 'B']))).toBe(true);
   });
 });
 

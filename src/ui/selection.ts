@@ -1,6 +1,6 @@
 // Pure selection helpers used by the strip, the palette and the selection bar.
 import type { NodeId, SeqNode, Square, Track } from '../core/model';
-import { findLocation, findNode, group, nodeIds, ungroup, type DropTarget } from '../core/ops';
+import { findLocation, findNode, groupOrJoin, nodeIds, ungroup, type DropTarget } from '../core/ops';
 
 export type SelectMode = 'replace' | 'toggle';
 
@@ -26,10 +26,10 @@ export function insertTarget(track: Track, selection: ReadonlySet<NodeId>): Drop
   return at ? { parentId: at.parentId, index: at.index + 1 } : { parentId: null, index: track.nodes.length };
 }
 
-/** True when the Group op would create a group from this selection. */
+/** True when the Group button would create or join a group with this selection. */
 export function canGroup(track: Track, selection: ReadonlySet<NodeId>): boolean {
-  // The probe id is never used: `group` only calls nextId when it succeeds, and we discard the result.
-  return group(track, [...selection], () => '__probe__').groupId !== null;
+  // The probe id is never used: nextId is only called when a group is created, and the result is discarded.
+  return groupOrJoin(track, [...selection], () => '__probe__').groupId !== null;
 }
 
 /** Selected groups in document order (an outer group before the groups inside it). */
