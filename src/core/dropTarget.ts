@@ -30,13 +30,19 @@ export interface Indicator {
   bottom: number;
 }
 
-export type Drop = { kind: 'move'; target: DropTarget; indicator: Indicator } | { kind: 'delete' };
+export type Drop =
+  | { kind: 'move'; target: DropTarget; indicator: Indicator }
+  /** Onto the middle of a top-level square: group the dragged nodes with it. */
+  | { kind: 'combine'; targetId: NodeId; rect: Rect }
+  | { kind: 'delete' };
 
 export interface DropOptions {
   /** Distance outside the strip (px) beyond which a drop deletes. */
   deleteMargin?: number;
   /** Fraction of a group's width on each side that means "before/after the group" rather than "inside". */
   groupEdge?: number;
+  /** Fraction of a top-level square's width, centred, that means "combine with it" rather than before/after. */
+  combineZone?: number;
 }
 
 const contains = (r: Rect, p: Point) => p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom;
@@ -82,7 +88,7 @@ export function dropTarget(
   p: Point,
   items: readonly LayoutItem[],
   strip: Rect,
-  { deleteMargin = 40, groupEdge = 0.2 }: DropOptions = {},
+  { deleteMargin = 40, groupEdge = 0.2, combineZone = 0.5 }: DropOptions = {},
 ): Drop {
   const outside = Math.max(distance(p.x, strip.left, strip.right), distance(p.y, strip.top, strip.bottom));
   if (outside > deleteMargin) return { kind: 'delete' };
@@ -98,7 +104,14 @@ export function dropTarget(
     return true;
   };
   const hit = items.filter((i) => contains(i.rect, p) && visibleAt(i)).sort((a, b) => b.depth - a.depth)[0];
-  if (hit?.kind === 'square') return beside(hit, p.x >= centerX(hit.rect));
+  if (hit?.kind === 'square') {
+    // Only top-level squares: inside groups squares are too narrow for three zones, and nesting stays explicit.
+    const half = ((hit.rect.right - hit.rect.left) * combineZone) / 2;
+    if (hit.depth === 0 && Math.abs(p.x - centerX(hit.rect)) <= half) {
+      return { kind: 'combine', targetId: hit.id, rect: hit.rect };
+    }
+    return beside(hit, p.x >= centerX(hit.rect));
+  }
   if (hit?.kind === 'group') {
     const edge = (hit.rect.right - hit.rect.left) * groupEdge;
     if (p.x < hit.rect.left + edge) return beside(hit, false);

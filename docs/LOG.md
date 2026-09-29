@@ -25,6 +25,14 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Entries
 
+### 2026-09-29 — user-reported group bugs fixed
+
+- Group with a square inside a group plus another square nested a new group (or did nothing). Group now joins the
+  existing group (`groupOrJoin`); all-inside selections still make a sub-group, as the user confirmed.
+- A square couldn't be dropped _into_ another square: top-level squares now have a middle "combine" zone.
+- Both are reproduced as e2e tests. Details are in the "Update" sections of `docs/features/03-groups.md` and
+  `08-drag-drop.md`.
+
 ### 2026-09-29 — public repo, Pages deploy restored
 
 - The user made the repo public. Pages is enabled through the API (`build_type=workflow`), and `deploy.yml` is

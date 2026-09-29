@@ -1,6 +1,6 @@
 // Selection actions shared by the selection bar, the palette and the keyboard shortcuts.
 import { square, type SoundId } from '../core/model';
-import { group, insert, remove, setSound, toggleMute } from '../core/ops';
+import { groupOrJoin, insert, remove, setSound, toggleMute } from '../core/ops';
 import type { AppState } from '../state.svelte';
 import { insertTarget, selectedGroupIds, ungroupAll } from './selection';
 import type { Shortcut } from './shortcuts';
@@ -33,7 +33,7 @@ export function toggleMuteSelection(app: AppState): void {
 
 /** Groups the selection if possible and selects the new group. */
 export function groupSelection(app: AppState): void {
-  const result = group(app.track, [...app.selection], app.nextId);
+  const result = groupOrJoin(app.track, [...app.selection], app.nextId);
   if (result.groupId === null) return;
   app.updateTrack(() => result.track);
   app.select([result.groupId]);

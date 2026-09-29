@@ -78,3 +78,15 @@ feature adds the tree operations. Timing comes from the structure alone and is c
 - Review: a temporary randomized check (3000 random trees, never committed) ran `move`, `group`, `ungroup` and
   `remove`. It confirmed that results stay normalized, ids stay unique, squares are never lost or duplicated,
   and frozen inputs are left untouched.
+
+## Update 2026-09-29: Group joins an existing group (user report)
+
+The user pressed Group with a square inside a group plus another square, expecting to add it to the group, and got
+a nested group instead. The UI now uses `groupOrJoin(track, ids, nextId)` (`core/ops.ts`); `group` stays the
+primitive.
+
+- The selection contains exactly one group plus siblings of it → those siblings **join** the group: the ones before
+  it go to its start, the ones after it go to its end (timeline order).
+- The selection has squares inside group G plus squares that are siblings of G → the outside squares join G.
+- Everything inside the same group (and not all of its children) → a new sub-group (explicit nesting, as before).
+- Two or more groups, or plain siblings → a new group (as before). Unrelated places → nothing.
