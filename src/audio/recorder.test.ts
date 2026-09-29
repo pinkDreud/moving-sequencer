@@ -148,6 +148,47 @@ describe('startRecording', () => {
     const recording = await startRecording(deps, 2);
     expect([...timer.pending.values()].map((p) => p.ms)).toEqual([2000]);
     recording.stop();
+    expect([...timer.pending.values()].map((p) => p.ms)).toEqual([2000]); // only the stop watchdog is left
+  });
+
+  it('fails and releases the mic when stopping the recorder throws (older Safari, inactive recorder)', async () => {
+    const audioSession = { type: 'playback' };
+    const { deps, recorder, stream } = mic({ audioSession });
+    const recording = await startRecording(deps);
+    recorder().stop = () => {
+      throw new DOMException('inactive', 'InvalidStateError');
+    };
+    expect(() => recording.stop()).not.toThrow();
+    await expect(recording.result).rejects.toMatchObject({ reason: 'failed' });
+    expect(stream.tracks.every((t) => t.stopped)).toBe(true);
+    expect(audioSession.type).toBe('playback');
+  });
+
+  it('the automatic stop does not throw either when stopping the recorder fails', async () => {
+    const { deps, recorder, timer } = mic();
+    const recording = await startRecording(deps);
+    recorder().stop = () => {
+      throw new DOMException('inactive', 'InvalidStateError');
+    };
+    expect(() => timer.fireAll()).not.toThrow();
+    await expect(recording.result).rejects.toMatchObject({ reason: 'failed' });
+  });
+
+  it('gives up 2 s after a stop that the recorder never confirms, releasing the mic', async () => {
+    const { deps, stream, timer } = mic();
+    const recording = await startRecording(deps);
+    recording.stop();
+    timer.fireAll(); // the watchdog: no stop event came
+    await expect(recording.result).rejects.toMatchObject({ reason: 'failed' });
+    expect(stream.tracks.every((t) => t.stopped)).toBe(true);
+  });
+
+  it('clears the watchdog once the recorder confirms the stop', async () => {
+    const { deps, recorder, timer } = mic();
+    const recording = await startRecording(deps);
+    recording.stop();
+    recorder().finish([new Blob(['x'])]);
+    await recording.result;
     expect(timer.pending.size).toBe(0);
   });
 
@@ -200,6 +241,28 @@ describe('startRecording', () => {
     recording.stop();
     recorder().finish([new Blob(['x'])]);
     await recording.result;
+    expect(audioSession.type).toBe('playback');
+  });
+
+  it('restores the audio session after a recorder error, even when stop follows the error', async () => {
+    const audioSession = { type: 'playback' };
+    const { deps, recorder } = mic({ audioSession });
+    const recording = await startRecording(deps);
+    recorder().handlers.onerror(new Error('device lost'));
+    recorder().handlers.onstop(); // browsers fire stop after error
+    await expect(recording.result).rejects.toMatchObject({ reason: 'failed' });
+    expect(audioSession.type).toBe('playback');
+  });
+
+  it('restores the audio session when the recorder cannot start', async () => {
+    const audioSession = { type: 'playback' };
+    const { deps } = mic({
+      audioSession,
+      createRecorder: () => {
+        throw new Error('unsupported');
+      },
+    });
+    await expect(startRecording(deps)).rejects.toBeInstanceOf(MicError);
     expect(audioSession.type).toBe('playback');
   });
 

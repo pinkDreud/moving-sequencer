@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   dbToGain,
+  fadeIn,
   fadeOut,
   mixToMono,
   normalizePeak,
@@ -143,7 +144,27 @@ describe('fadeOut', () => {
   });
 });
 
+describe('fadeIn', () => {
+  it('ramps the first 2 ms linearly up from 0', () => {
+    const out = fadeIn(new Float32Array(10).fill(1), SR);
+    expect(out[0]).toBe(0);
+    expect(out[1]).toBeCloseTo(0.5, 6);
+    expect(out[2]).toBe(1);
+  });
+
+  it('does not mutate its input', () => {
+    const input = new Float32Array(5).fill(1);
+    fadeIn(input, SR);
+    expect([...input].every((x) => x === 1)).toBe(true);
+  });
+});
+
 describe('processRecording', () => {
+  it('starts from 0 so the trimmed onset does not click', () => {
+    const out = processRecording([signal(100, 50, 0.5)], SR);
+    expect(Math.abs(out[0] ?? 1)).toBe(0);
+  });
+
   it('mixes, trims the leading silence, normalizes to -1 dBFS and fades out', () => {
     const left = signal(300, 200, 0.2);
     const right = signal(300, 200, 0.1);

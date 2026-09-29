@@ -81,11 +81,17 @@ test('a denied mic permission shows an inline message and the app keeps working'
   await page.addInitScript(() => {
     const getUserMedia = () => Promise.reject(new DOMException('Permission denied', 'NotAllowedError'));
     Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia }, configurable: true });
+    // Some WebKit builds have no MediaRecorder, which would disable Record before getUserMedia is reached.
+    if (!('MediaRecorder' in window)) {
+      Object.defineProperty(window, 'MediaRecorder', { value: class {}, configurable: true });
+    }
   });
   await page.goto('./?fake-audio');
   const dialogs: string[] = [];
   page.on('dialog', (d) => dialogs.push(d.message()));
 
+  // The live region is rendered (not display:none) before the message, or screen readers may not announce it.
+  await expect(palette(page).getByRole('status')).toHaveCount(1);
   await paletteButton(page, 'Record').click();
   await expect(palette(page).getByRole('status')).toHaveText('Microphone permission denied');
   await expect(paletteButton(page, 'Record')).toBeEnabled();

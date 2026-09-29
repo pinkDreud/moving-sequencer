@@ -63,6 +63,18 @@ describe('Palette', () => {
       expect(fake.session().recording.stop).toHaveBeenCalledTimes(1);
     });
 
+    it('offers Cancel while waiting for the mic, and "Saving…" (disabled) while decoding', async () => {
+      const { control, fake } = fakeRecordDeps();
+      render(Palette, { sounds: KIT, onpick: () => {}, recording: control });
+      fireEvent.click(screen.getByRole('button', { name: 'Record' }));
+      const cancel = await screen.findByRole('button', { name: 'Cancel recording' });
+      expect(cancel).toBeEnabled();
+      await settle();
+      fake.session().finish(new Blob(['a']));
+      const saving = await screen.findByRole('button', { name: 'Saving…' });
+      expect(saving).toBeDisabled();
+    });
+
     it('is disabled with a "Needs HTTPS" hint outside a secure context', () => {
       const { control } = fakeRecordDeps({ availability: 'insecure' });
       render(Palette, { sounds: KIT, onpick: () => {}, recording: control });
@@ -102,6 +114,24 @@ describe('Palette', () => {
       fireEvent.pointerDown(confirm);
       fireEvent.click(confirm);
       expect(deps.remove).toHaveBeenCalledWith('rec-a');
+    });
+
+    it('moves the focus to Record after a delete, so it does not fall back to the page', async () => {
+      const { control } = fakeRecordDeps();
+      const { rerender } = render(Palette, { sounds: [...KIT, rec], onpick: () => {}, recording: control });
+      const del = screen.getByRole('button', { name: 'Delete Rec 1' });
+      del.focus();
+      fireEvent.click(del);
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm delete Rec 1' }));
+      await rerender({ sounds: KIT, onpick: () => {}, recording: control });
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Record' }));
+    });
+
+    it('disarms the delete when its button loses focus', async () => {
+      render(Palette, { sounds: [...KIT, rec], onpick: () => {}, recording: fakeRecordDeps().control });
+      fireEvent.click(screen.getByRole('button', { name: 'Delete Rec 1' }));
+      fireEvent.blur(screen.getByRole('button', { name: 'Confirm delete Rec 1' }));
+      expect(await screen.findByRole('button', { name: 'Delete Rec 1' })).toBeInTheDocument();
     });
 
     it('disarms the delete when the user presses anywhere else', async () => {

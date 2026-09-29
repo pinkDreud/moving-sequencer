@@ -15,11 +15,10 @@ describe('RecordControl', () => {
     expect(control.message).toBeNull();
   });
 
-  it('waits for the mic (disabled), then records and counts the elapsed time', async () => {
+  it('waits for the mic, then records and counts the elapsed time', async () => {
     const { control, fake } = fakeRecordDeps();
     void control.toggle();
     expect(control.status).toBe('starting');
-    expect(control.disabled).toBe(true);
     await settle();
     expect(control.status).toBe('recording');
     expect(control.disabled).toBe(false);
@@ -27,6 +26,49 @@ describe('RecordControl', () => {
     fake.ms = 1234;
     fake.tick();
     expect(control.elapsed).toBeCloseTo(1.234, 6);
+  });
+
+  it('a press while waiting for the mic cancels: idle at once, and the late recording is stopped and dropped', async () => {
+    let grant: (recording: Recording) => void = () => {};
+    const start = vi.fn(() => new Promise<Recording>((resolve) => (grant = resolve)));
+    const { control, deps } = fakeRecordDeps({ start });
+    void control.toggle();
+    expect(control.status).toBe('starting');
+    expect(control.disabled).toBe(false);
+    void control.toggle();
+    expect(control.status).toBe('idle');
+    const late = { stop: vi.fn(), result: Promise.resolve(new Blob(['x'])) };
+    grant(late);
+    await settle();
+    expect(late.stop).toHaveBeenCalledTimes(1);
+    expect(deps.save).not.toHaveBeenCalled();
+    expect(control.status).toBe('idle');
+  });
+
+  it('after a cancel, the next press starts a new recording', async () => {
+    const pending: ((recording: Recording) => void)[] = [];
+    const start = vi.fn(() => new Promise<Recording>((resolve) => pending.push(resolve)));
+    const { control } = fakeRecordDeps({ start });
+    void control.toggle();
+    void control.toggle();
+    void control.toggle();
+    expect(start).toHaveBeenCalledTimes(2);
+    expect(control.status).toBe('starting');
+    pending[1]?.({ stop: vi.fn(), result: new Promise(() => {}) });
+    await settle();
+    expect(control.status).toBe('recording');
+    pending[0]?.({ stop: vi.fn(), result: new Promise(() => {}) }); // the cancelled one arrives last
+    await settle();
+    expect(control.status).toBe('recording');
+  });
+
+  it('pressing Stop twice stops once', async () => {
+    const { control, fake } = fakeRecordDeps();
+    void control.toggle();
+    await settle();
+    void control.toggle();
+    void control.toggle();
+    expect(fake.session().recording.stop).toHaveBeenCalledTimes(1);
   });
 
   it('never shows more than the 4 s limit', async () => {
@@ -70,9 +112,8 @@ describe('RecordControl', () => {
     expect(control.status).toBe('idle');
   });
 
-  it('ignores presses while waiting for the mic or saving', async () => {
+  it('ignores presses while saving', async () => {
     const { control, fake, deps } = fakeRecordDeps();
-    void control.toggle();
     void control.toggle();
     await settle();
     fake.session().finish(new Blob(['a']));
