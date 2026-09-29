@@ -1,6 +1,6 @@
 # 07 — Strip UI, palette, selection, playhead
 
-Status: planned
+Status: in progress
 Branch: feat/07-strip-ui
 
 ## Behaviour
@@ -22,6 +22,32 @@ playhead lights up.
 - [ ] Every square has an `aria-label`: sound name, "silent", plus ", muted" when muted.
 - [ ] Component tests (Testing Library) for rendering and selection. e2e: add squares from the palette, group three of them, ungroup, delete.
 
+## Details (refined before coding)
+
+- **Palette insertion**: with a selection, the new square goes right after the last selected node in document
+  order (a group comes before its children), inside that node's parent, and **becomes the selection**. Tapping
+  Kick, Snare, Hat after selecting A gives `A Kick Snare Hat`, like a text cursor. With no selection it is
+  appended at the end of the root and the selection stays empty.
+- **Sound mode**: the SelectionBar "Sound" button arms a one-shot mode (`aria-pressed="true"`). The next palette
+  tap applies `setSound` to the selection instead of inserting, then the mode turns off. Tapping Sound again, or
+  an empty selection, turns it off too. A group in the selection targets all squares below it.
+- **Mute/Unmute** label: "Unmute" when every square targeted by the selection is muted, else "Mute".
+- **Group** is enabled when `group(track, selection)` would return a `groupId` (≥ 2 siblings, not every child of
+  a group). After grouping, the new group is the selection.
+- **Ungroup** is enabled when the selection contains a group; it ungroups every selected group (outer first) and
+  selects their former children that still exist.
+- **Delete** removes the selection (descendants too). **Clear** (×) empties the selection.
+- **Group selection**: a group has a frame (a `<button>` behind its children, visible as a few px of padding).
+  Tapping the frame selects the group; tapping a child selects the child. No nested interactive elements.
+- **Pointer type**: the strip records `pointerType` on `pointerdown`; the following `click` uses it
+  (`touch` → toggle). Keyboard activation (Enter/Space on a focused square) behaves like a mouse click.
+- **DOM contract for 08**: every node's outer element carries `data-node-id`; top-level slots are the direct
+  children of the strip (`section.strip`, `aria-label="Pattern"`); a group's children are inside its
+  `.children` element. The slot size is the CSS variable `--slot-size` (56 px, 44 px on narrow screens).
+- Keyboard shortcuts are ignored while focus is in an input, select, textarea or contenteditable element, and
+  when Ctrl/Cmd/Alt is held (so browser shortcuts keep working).
+- Unknown sound id (e.g. a deleted recording): grey square, labelled with the id.
+
 ## Edge cases
 
 - Very deep nesting: children get narrow. Keep a minimum of 6 px and clip the rest (the timing stays correct).
@@ -39,4 +65,7 @@ Drag & drop (08), lasso (08).
 
 ## Files
 
-`src/state.svelte.ts`, `src/ui/{Strip,NodeView,Palette,SelectionBar}.svelte`, component tests, `tests/e2e/edit.spec.ts`.
+`src/ui/{Editor,Strip,NodeView,Palette,SelectionBar}.svelte`, `src/ui/selection.ts` (pure helpers),
+`src/ui/actions.ts` (selection actions on `AppState`), `src/ui/shortcuts.ts`, component/unit tests,
+`tests/e2e/edit.spec.ts`. `Editor.svelte` holds the pieces together (sound mode, keyboard) so `App.svelte`
+only mounts it.
