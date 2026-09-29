@@ -16,6 +16,11 @@ shows where it lands, which can be between squares, inside a group, or out of a 
 moves the whole selection, and a group moves as one block. Drop it well outside the pattern to delete it. Escape
 cancels. It all works while playing, and the change is heard on the next subdivision.
 
+**Recording**: press **Record** at the end of the palette, allow the microphone, make a sound, and press **Stop** (it
+stops by itself after 4 s). The recording becomes a new sound, "Rec 1", with the leading silence cut and the volume
+evened out. Use it like any other sound. Its × button deletes it (press twice); the squares that used it turn silent.
+The microphone needs a secure page: `localhost` or HTTPS (see `npm run dev:https` below).
+
 No public deployment yet. To try it on a phone, run the dev server on your LAN (see below).
 
 ## Development
@@ -24,6 +29,7 @@ No public deployment yet. To try it on a phone, run the dev server on your LAN (
 npm install
 npm run dev        # http://localhost:5173/moving-sequencer/
 npm run dev -- --host   # also reachable from a phone on the same Wi-Fi (URL printed in the terminal)
+npm run dev:https  # same over HTTPS (self-signed), so the phone's mic works; accept the certificate warning
 npm run verify     # lint + typecheck + unit tests
 npm run test:e2e   # Playwright (first time: npx playwright install chromium webkit)
 ```
