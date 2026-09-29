@@ -95,3 +95,24 @@ export class WebAudioEngine implements AudioEngine {
     this.live.clear();
   }
 }
+
+const GESTURES = ['pointerdown', 'pointerup', 'keydown'] as const;
+
+/**
+ * Browsers start an AudioContext suspended until a user gesture, and for touch iOS only accepts `pointerup`/
+ * `touchend` as one: try on every candidate event until the context actually runs.
+ */
+export function unlockOnGesture(engine: WebAudioEngine, target: EventTarget = window): void {
+  const unlock = () => {
+    engine.unlock().then(
+      () => {
+        if (engine.context.state !== 'running') return;
+        for (const type of GESTURES) target.removeEventListener(type, unlock, true);
+      },
+      () => {
+        // Not a gesture this browser accepts: the next one retries.
+      },
+    );
+  };
+  for (const type of GESTURES) target.addEventListener(type, unlock, true);
+}
