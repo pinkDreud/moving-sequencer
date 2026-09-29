@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import { flushSync } from 'svelte';
 import { describe, expect, it } from 'vitest';
-import { findNode } from '../core/ops';
+import { findNode, toggleMute } from '../core/ops';
 import { shape } from '../core/test-helpers';
 import SelectionBar from './SelectionBar.svelte';
 import { makeApp } from './test-helpers';
@@ -73,5 +73,38 @@ describe('SelectionBar', () => {
   it('has no Sound button: a palette tap sets the sound of the selection directly', () => {
     render(SelectionBar, { app: makeApp('A B', ['A']) });
     expect(screen.queryByRole('button', { name: 'Sound' })).toBeNull();
+  });
+
+  it('works on a prep selection: Group, Ungroup, Mute label, Delete', () => {
+    const app = makeApp('A', ['P', 'Q'], 'P Q R');
+    render(SelectionBar, { app });
+    expect(button('Group')).toBeEnabled();
+    expect(button('Ungroup')).toBeDisabled();
+    fireEvent.click(button('Group'));
+    expect(shape(app.prep)).toBe('n1[P Q] R');
+    expect(button('Ungroup')).toBeEnabled();
+    fireEvent.click(button('Mute'));
+    expect(findNode(app.prep, 'P')).toMatchObject({ muted: true });
+    expect(button('Unmute')).toBeInTheDocument();
+    fireEvent.click(button('Delete'));
+    expect(shape(app.prep)).toBe('R');
+  });
+
+  it('disables Group for a selection that spans the pattern and the prep area', () => {
+    const app = makeApp('A B', ['A', 'B', 'P'], 'P Q');
+    render(SelectionBar, { app });
+    expect(bar()).toHaveTextContent('3 selected');
+    expect(button('Group')).toBeDisabled();
+  });
+
+  it('reads Unmute only when every selected square in both areas is muted', () => {
+    const app = makeApp('A', ['A', 'P'], 'P');
+    render(SelectionBar, { app });
+    app.updateTrack((t) => toggleMute(t, ['A']));
+    flushSync();
+    expect(button('Mute')).toBeInTheDocument();
+    app.updateArea('prep', (t) => toggleMute(t, ['P']));
+    flushSync();
+    expect(button('Unmute')).toBeInTheDocument();
   });
 });

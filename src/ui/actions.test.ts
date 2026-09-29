@@ -114,6 +114,71 @@ describe('selection actions', () => {
   });
 });
 
+describe('actions in the preparation area', () => {
+  it('pickSound with nothing selected appends to the active area', () => {
+    const app = makeApp('A B', [], 'P');
+    app.activeArea = 'prep';
+    pickSound(app, 'rim');
+    expect(shape(app.prep)).toBe('P n1');
+    expect(findNode(app.prep, 'n1')).toMatchObject({ soundId: 'rim' });
+    expect(shape(app.track)).toBe('A B');
+    app.activeArea = 'pattern';
+    pickSound(app, 'hat');
+    expect(shape(app.track)).toBe('A B n2');
+  });
+
+  it('pickSound with a selection sets the sound in both areas, whatever the active area', () => {
+    const app = makeApp('A B', ['A', 'P'], 'P Q');
+    pickSound(app, 'clap');
+    expect(findNode(app.track, 'A')).toMatchObject({ soundId: 'clap' });
+    expect(findNode(app.prep, 'P')).toMatchObject({ soundId: 'clap' });
+    expect(findNode(app.prep, 'Q')).toMatchObject({ soundId: 'kick' });
+    expect(shape(app.prep)).toBe('P Q');
+  });
+
+  it('deleteSelection removes selected nodes from both areas', () => {
+    const app = makeApp('A B', ['A', 'Q'], 'P Q');
+    deleteSelection(app);
+    expect(shape(app.track)).toBe('B');
+    expect(shape(app.prep)).toBe('P');
+    expect(app.selection.size).toBe(0);
+  });
+
+  it('toggleMuteSelection treats both areas as one selection', () => {
+    const app = makeApp('A B', ['A', 'P'], 'P Q');
+    toggleMuteSelection(app);
+    expect(findNode(app.track, 'A')).toMatchObject({ muted: true });
+    expect(findNode(app.prep, 'P')).toMatchObject({ muted: true });
+    toggleMuteSelection(app);
+    expect(findNode(app.track, 'A')).toMatchObject({ muted: false });
+    expect(findNode(app.prep, 'P')).toMatchObject({ muted: false });
+  });
+
+  it('groupSelection groups inside the prep area', () => {
+    const app = makeApp('A B', ['P', 'Q'], 'P Q R');
+    groupSelection(app);
+    expect(shape(app.prep)).toBe('n1[P Q] R');
+    expect(shape(app.track)).toBe('A B');
+    expect(selected(app)).toEqual(['n1']);
+  });
+
+  it('groupSelection does nothing for a selection that spans both areas', () => {
+    const app = makeApp('A B', ['A', 'B', 'P'], 'P Q');
+    const [song, prep] = [app.song, app.prep];
+    groupSelection(app);
+    expect(app.song).toBe(song);
+    expect(app.prep).toBe(prep);
+  });
+
+  it('ungroupSelection ungroups selected groups in either area', () => {
+    const app = makeApp('A G[B C]', ['G', 'H'], 'H[P Q] R');
+    ungroupSelection(app);
+    expect(shape(app.track)).toBe('A B C');
+    expect(shape(app.prep)).toBe('P Q R');
+    expect(selected(app)).toEqual(['B', 'C', 'P', 'Q']);
+  });
+});
+
 describe('runShortcut', () => {
   it('dispatches each shortcut to its action', () => {
     const app = makeApp('A B C', ['A', 'B']);

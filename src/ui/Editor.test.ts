@@ -81,6 +81,58 @@ describe('Editor', () => {
     expect(app.song).toBe(song);
   });
 
+  it('shows an empty, labelled preparation area with a hint', () => {
+    render(Editor, { app: makeApp('A B') });
+    const prep = screen.getByRole('region', { name: 'Prepare' });
+    expect(prep.querySelectorAll('[data-node-id]')).toHaveLength(0);
+    expect(prep).toHaveTextContent(/drag it into the pattern/i);
+    expect(screen.getByRole('heading', { name: 'Prepare' })).toBeInTheDocument();
+  });
+
+  it('a tap in the prep area makes it the active area: palette taps then append there', () => {
+    const app = makeApp('A B');
+    render(Editor, { app });
+    const pattern = screen.getByRole('region', { name: 'Pattern' });
+    const prep = screen.getByRole('region', { name: 'Prepare' });
+    expect(pattern).toHaveClass('active');
+    expect(prep).not.toHaveClass('active');
+    fireEvent.click(prep);
+    expect(prep).toHaveClass('active');
+    expect(pattern).not.toHaveClass('active');
+    fireEvent.click(paletteButton('Clap'));
+    fireEvent.click(paletteButton('Rim'));
+    expect(shape(app.prep)).toBe('n1 n2');
+    expect(shape(app.track)).toBe('A B');
+    expect(within(prep).getByRole('button', { name: 'Clap' })).toHaveAttribute('data-node-id', 'n1');
+    expect(prep).not.toHaveTextContent(/drag it into the pattern/i);
+    fireEvent.click(pattern);
+    expect(pattern).toHaveClass('active');
+    fireEvent.click(paletteButton('Hat'));
+    expect(shape(app.track)).toBe('A B n3');
+  });
+
+  it('a click on a prep square selects it, and a palette tap sets its sound', () => {
+    const app = makeApp('A B', [], 'P Q');
+    render(Editor, { app });
+    const prep = screen.getByRole('region', { name: 'Prepare' });
+    const p = prep.querySelector('[data-node-id="P"]');
+    if (!(p instanceof HTMLElement)) throw new Error('no P');
+    fireEvent.click(p);
+    expect([...app.selection]).toEqual(['P']);
+    fireEvent.click(paletteButton('Hat'));
+    expect(findNode(app.prep, 'P')).toMatchObject({ soundId: 'hat' });
+    expect(shape(app.prep)).toBe('P Q');
+  });
+
+  it('keyboard shortcuts act on a prep selection', () => {
+    const app = makeApp('A', ['P', 'Q'], 'P Q R');
+    render(Editor, { app });
+    fireEvent.keyDown(window, { key: 'g' });
+    expect(shape(app.prep)).toBe('n1[P Q] R');
+    fireEvent.keyDown(window, { key: 'Delete' });
+    expect(shape(app.prep)).toBe('R');
+  });
+
   it('keyboard shortcuts are ignored while typing in a text field', () => {
     const app = makeApp('A B', ['A']);
     render(Editor, { app });
