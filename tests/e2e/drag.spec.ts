@@ -100,6 +100,22 @@ test('drags a whole group as a block', async ({ page }) => {
   await expect.poll(() => shape(page)).toBe('kick rim g[snare clap]');
 });
 
+test('dropping a square onto the middle of another square groups them', async ({ page }) => {
+  await load(page, [sq('kick'), sq('snare'), sq('clap'), sq('rim')]);
+  await drag(page, node(page, 'rim'), await at(node(page, 'snare'), 0.5), async () => {
+    await expect(page.locator('.drop-combine')).toBeVisible();
+  });
+  await expect.poll(() => shape(page)).toMatch(/^kick \w+\[snare rim\] clap$/);
+});
+
+test('Group with a group and a square outside it adds the square to that group', async ({ page }) => {
+  await load(page, [sq('kick'), grp('g', sq('snare'), sq('clap')), sq('rim')]);
+  await node(page, 'snare').click();
+  await node(page, 'rim').click({ modifiers: ['Shift'] });
+  await page.keyboard.press('g');
+  await expect.poll(() => shape(page)).toBe('kick g[snare clap rim]');
+});
+
 test('dropping far outside the strip deletes', async ({ page }) => {
   await load(page, [sq('kick'), sq('snare'), sq('clap')]);
   const box = await strip(page).boundingBox();

@@ -176,3 +176,42 @@ describe('dropTarget with clipped group children', () => {
     expect(dropTarget({ x: 40, y: 25 }, items, strip)).toMatchObject({ target: { parentId: 'G', index: 1 } });
   });
 });
+
+describe('dropTarget combine zone (drop a square onto a square)', () => {
+  const items = row(['A', 'B', 'C']); // B spans 60..110
+
+  it('the middle half of a top-level square combines with it', () => {
+    expect(dropTarget({ x: 85, y: 25 }, items, strip)).toEqual({
+      kind: 'combine',
+      targetId: 'B',
+      rect: { left: 60, top: 0, right: 110, bottom: 50 },
+    });
+    expect(dropTarget({ x: 73, y: 25 }, items, strip).kind).toBe('combine');
+    expect(dropTarget({ x: 97, y: 25 }, items, strip).kind).toBe('combine');
+  });
+
+  it('the outer quarters still mean before / after', () => {
+    expect(dropTarget({ x: 71, y: 25 }, items, strip)).toMatchObject({
+      target: { parentId: null, index: 1 },
+    });
+    expect(dropTarget({ x: 99, y: 25 }, items, strip)).toMatchObject({
+      target: { parentId: null, index: 2 },
+    });
+  });
+
+  it('squares inside a group have no combine zone (too small; nesting is an explicit Group)', () => {
+    const grouped: LayoutItem[] = [
+      { id: 'G', parentId: null, index: 0, kind: 'group', depth: 0, rect: rect(0, 0, 50, 50) },
+      { id: 'X', parentId: 'G', index: 0, kind: 'square', depth: 1, rect: rect(2, 2, 23, 46) },
+      { id: 'Y', parentId: 'G', index: 1, kind: 'square', depth: 1, rect: rect(25, 2, 23, 46) },
+    ];
+    expect(dropTarget({ x: 12, y: 25 }, grouped, strip)).toMatchObject({
+      kind: 'move',
+      target: { parentId: 'G', index: 0 },
+    });
+  });
+
+  it('gaps never combine', () => {
+    expect(dropTarget({ x: 55, y: 25 }, items, strip).kind).toBe('move');
+  });
+});

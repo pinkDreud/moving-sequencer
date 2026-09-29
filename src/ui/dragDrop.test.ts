@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Drop } from '../core/dropTarget';
 import { parseTrack, shape } from '../core/test-helpers';
-import { applyDrop, dragIds, readLayout } from './dragDrop';
+import { applyDrop, dragIds, dropResult, readLayout } from './dragDrop';
 import { makeApp } from './test-helpers';
 
 /** Builds the Strip DOM shape (section > nodes; group > frame + .children > nodes) with fake rects. */
@@ -88,6 +88,18 @@ describe('applyDrop', () => {
     const app = makeApp('A G[B C] D');
     applyDrop(app, ['D'], move('G', 1));
     expect(shape(app.track)).toBe('A G[B D C]');
+  });
+
+  it('combines on a combine drop: the dragged square and the target form a group', () => {
+    const app = makeApp('A B C D');
+    applyDrop(app, ['D'], { kind: 'combine', targetId: 'B', rect: { left: 0, top: 0, right: 0, bottom: 0 } });
+    expect(shape(app.track)).toBe('A n1[B D] C');
+  });
+
+  it('dropResult is the unchanged track when the drop would change nothing', () => {
+    const app = makeApp('A B C');
+    const drop: Drop = { kind: 'combine', targetId: 'A', rect: { left: 0, top: 0, right: 0, bottom: 0 } };
+    expect(dropResult(app.track, ['A'], drop)).toBe(app.track);
   });
 
   it('deletes on a delete drop and clears the deleted ids from the selection', () => {
