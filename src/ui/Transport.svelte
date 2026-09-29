@@ -253,7 +253,7 @@
     min-height: 44px;
   }
 
-  /* The whole 44 px-high box takes the pointer, not only the thin track drawn by the browser. */
+  /* The input keeps the shared 44 px min-height, so its whole box (not only the thin track) takes the pointer. */
   .swing input {
     width: 112px;
     margin: 0;
