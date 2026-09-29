@@ -1,3 +1,5 @@
+import { appendFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 
 test.describe('PWA', () => {
@@ -40,5 +42,26 @@ test.describe('PWA', () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Moving Sequencer' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Pattern' })).toBeVisible();
+  });
+
+  test('after a deploy, an open page offers to reload into the new version', async ({ page }) => {
+    await page.goto('./');
+    await page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
+    await page.reload();
+    await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
+    await expect(page.getByText('New version available')).toHaveCount(0);
+
+    // Simulate a deploy: the preview server serves dist/ from disk, and any byte change makes a new worker.
+    appendFileSync(
+      fileURLToPath(new URL('../../dist/sw.js', import.meta.url)),
+      `\n// deploy ${Date.now()}\n`,
+    );
+    // Coming back to the foreground makes the page look for a new version.
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect(page.getByText('New version available')).toBeVisible({ timeout: 10_000 });
+
+    await page.getByRole('button', { name: 'Reload' }).click();
+    await expect(page.getByRole('heading', { name: 'Moving Sequencer' })).toBeVisible();
+    await expect(page.getByText('New version available')).toHaveCount(0);
   });
 });
