@@ -88,8 +88,21 @@ function updateChildren(
   );
 }
 
+/** The track without the given nodes (not normalized). */
+function without(track: Track, ids: ReadonlySet<NodeId>): Track {
+  return withNodes(
+    track,
+    rewrite(track.nodes, (n) => (ids.has(n.id) ? [] : [n])),
+  );
+}
+
 function clamp(index: number, length: number): number {
   return Math.max(0, Math.min(index, length));
+}
+
+function spliceIn(children: SeqNode[], index: number, nodes: SeqNode[]): SeqNode[] {
+  const at = clamp(index, children.length);
+  return [...children.slice(0, at), ...nodes, ...children.slice(at)];
 }
 
 // ---------- operations ----------
@@ -105,22 +118,15 @@ export function normalize(track: Track): Track {
 /** Inserts a square at `target`; unchanged if the parent is missing/a square or the id is taken. */
 export function insert(track: Track, target: DropTarget, square: Square): Track {
   if (findNode(track, square.id)) return track;
-  const out = updateChildren(track, target.parentId, (children) => {
-    const at = clamp(target.index, children.length);
-    return [...children.slice(0, at), square, ...children.slice(at)];
-  });
+  const out = updateChildren(track, target.parentId, (children) =>
+    spliceIn(children, target.index, [square]),
+  );
   return out ? normalize(out) : track;
 }
 
 /** Deletes the nodes (with their descendants) and normalizes. */
 export function remove(track: Track, ids: readonly NodeId[]): Track {
-  const set = new Set(ids);
-  return normalize(
-    withNodes(
-      track,
-      rewrite(track.nodes, (n) => (set.has(n.id) ? [] : [n])),
-    ),
-  );
+  return normalize(without(track, new Set(ids)));
 }
 
 /** Sets the sound of the targeted squares (a group id targets all squares below it). */
@@ -151,4 +157,30 @@ function updateSquares(track: Track, targets: Square[], update: (s: Square) => S
     track,
     rewrite(track.nodes, (n) => [n.kind === 'square' && set.has(n) ? update(n) : n]),
   );
+}
+
+/**
+ * Moves nodes to `target` (index as displayed, moved nodes still included). They land contiguously in
+ * document order; descendants of selected groups travel with them; dropping into a moved node is a no-op.
+ */
+export function move(track: Track, ids: readonly NodeId[], target: DropTarget): Track {
+  const selected = new Set(ids);
+  // Not descending below selected nodes drops selected descendants and hides every node inside a moved one.
+  const visible = walk(track.nodes, null, (n) => selected.has(n.id));
+  const moved = visible.filter((e) => selected.has(e.node.id));
+  const { parentId } = target;
+  const parent = parentId === null ? undefined : visible.find((e) => e.node.id === parentId)?.node;
+  if (moved.length === 0) return track;
+  if (parentId !== null && (parent?.kind !== 'group' || selected.has(parentId))) return track;
+
+  const siblings = parent?.kind === 'group' ? parent.children : track.nodes;
+  const index = clamp(target.index, siblings.length);
+  const adjusted = index - moved.filter((e) => e.parentId === parentId && e.index < index).length;
+  if (moved.every((e, i) => e.parentId === parentId && e.index === adjusted + i)) return track;
+
+  const nodes = moved.map((e) => e.node);
+  // Normalize only at the end: the target parent may be transiently under-full after the removal.
+  const rest = without(track, new Set(nodes.map((n) => n.id)));
+  const out = updateChildren(rest, parentId, (children) => spliceIn(children, adjusted, nodes));
+  return out ? normalize(out) : track;
 }
