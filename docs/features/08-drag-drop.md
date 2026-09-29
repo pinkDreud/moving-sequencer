@@ -55,6 +55,14 @@ Two parts:
   because `move` interprets indices "as displayed, moved items still included".
 - The page must not scroll or select text while dragging (`touch-action`, `user-select`, pointer capture).
 
+## Notes
+
+- dropTarget: the innermost element under the pointer wins. A group's 20 % edge zones only apply when the pointer is
+  on the group's own frame/padding, not over a child. Otherwise the first/last positions inside a group would be
+  unreachable. "Before/after a group" is reachable through the gaps between slots and the neighbours' halves.
+- Known limit: if a group's first child is itself a group, "before the inner group, inside the outer one" has no
+  pointer position. The same structure can be reached in two moves.
+
 ## Out of scope
 
 Lasso selection (a follow-up feature if still wanted), auto-scroll during drag of very long patterns, undo.
