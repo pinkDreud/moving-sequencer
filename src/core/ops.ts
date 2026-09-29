@@ -306,6 +306,53 @@ function join(track: Track, groupId: NodeId, ids: NodeId[]): { track: Track; gro
   return { track: out, groupId };
 }
 
+/** Where `transfer` puts nodes: at a drop target, or onto a square (grouped with it, like `combine`). */
+export type Placement = { at: DropTarget } | { onto: NodeId };
+
+/** A deep copy of `node` where every node gets a fresh id from `nextId`. */
+function cloneFresh(node: SeqNode, nextId: IdGen): SeqNode {
+  if (node.kind === 'square') return { ...node, id: nextId() };
+  const id = nextId();
+  return makeGroup(
+    id,
+    node.children.map((c) => cloneFresh(c, nextId)),
+  );
+}
+
+/**
+ * Moves (or, with `copy`, deep-copies with fresh ids) nodes of `from` into another track `to`, in document order.
+ * Descendants of selected groups travel with them. `ids` are the top-level placed nodes in `to`. When nothing can
+ * be placed (no id in `from`, or a missing/square target parent or combine target), both tracks come back unchanged.
+ */
+export function transfer(
+  from: Track,
+  to: Track,
+  ids: readonly NodeId[],
+  place: Placement,
+  { copy, nextId }: { copy: boolean; nextId: IdGen },
+): { from: Track; to: Track; ids: NodeId[] } {
+  const unchanged = { from, to, ids: [] };
+  const selected = new Set(ids);
+  const picked = walk(from.nodes, null, (n) => selected.has(n.id))
+    .filter((e) => selected.has(e.node.id))
+    .map((e) => e.node);
+  if (picked.length === 0) return unchanged;
+
+  const target = 'at' in place ? place.at : findLocation(to, place.onto);
+  if (!target) return unchanged;
+  if (target.parentId !== null && findNode(to, target.parentId)?.kind !== 'group') return unchanged;
+  if ('onto' in place && findNode(to, place.onto)?.kind !== 'square') return unchanged;
+
+  const nodes = copy ? picked.map((n) => cloneFresh(n, nextId)) : picked;
+  const placedIds = nodes.map((n) => n.id);
+  const index = 'at' in place ? target.index : target.index + 1;
+  let out = updateChildren(to, target.parentId, (children) => spliceIn(children, index, nodes));
+  if (!out) return unchanged;
+  out = normalize(out);
+  if ('onto' in place) out = groupOrJoin(out, [place.onto, ...placedIds], nextId).track;
+  return { from: copy ? from : remove(from, placedIds), to: out, ids: placedIds };
+}
+
 /**
  * Drops `ids` onto the square `targetId`: they are placed right after it and grouped with it (`groupOrJoin`, so a
  * dragged group absorbs the target). Unchanged when the target is one of the dragged nodes or inside one.

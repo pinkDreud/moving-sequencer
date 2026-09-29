@@ -127,3 +127,43 @@ export function dropTarget(
     indicator: { x: strip.left, top: strip.top, bottom: strip.bottom },
   };
 }
+
+/** The strips a drag can drop into: the playing pattern and the preparation area. */
+export type Area = 'pattern' | 'prep';
+
+export interface AreaRect {
+  area: Area;
+  rect: Rect;
+}
+
+/** A layout item and the strip it is rendered in. */
+export type AreaItem = LayoutItem & { area: Area };
+
+/** A drop in one of several strips: the area it lands in, or delete (too far from every strip). */
+export type AreaDrop = { kind: 'delete' } | (Exclude<Drop, { kind: 'delete' }> & { area: Area });
+
+/**
+ * `dropTarget` over several strips. The strip nearest to the pointer (distance 0 when inside it) takes the drop if
+ * it is within `deleteMargin`; further than that from every strip means delete.
+ */
+export function dropTargetIn(
+  p: Point,
+  items: readonly AreaItem[],
+  areas: readonly AreaRect[],
+  options: DropOptions = {},
+): AreaDrop {
+  const { deleteMargin = 40 } = options;
+  const outside = (r: Rect) => Math.max(distance(p.x, r.left, r.right), distance(p.y, r.top, r.bottom));
+  const nearest = areas.reduce<AreaRect | undefined>(
+    (best, a) => (best && outside(best.rect) <= outside(a.rect) ? best : a),
+    undefined,
+  );
+  if (!nearest || outside(nearest.rect) > deleteMargin) return { kind: 'delete' };
+  const drop = dropTarget(
+    p,
+    items.filter((i) => i.area === nearest.area),
+    nearest.rect,
+    options,
+  );
+  return drop.kind === 'delete' ? drop : { ...drop, area: nearest.area };
+}
