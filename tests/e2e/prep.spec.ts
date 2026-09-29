@@ -134,10 +134,13 @@ test('drag prep → pattern with Alt held at release moves', async ({ page, isMo
   test.skip(isMobile, 'no Alt key on touch');
   await load(page, [sq('kick'), sq('snare')], [sq('clap'), sq('rim')]);
   await drag(page, inPrep(page, 'clap'), await at(inPattern(page, 'snare'), 0.9), async () => {
+    await expect(page.locator('.ghost')).toContainText('Copy');
+    // Pressing Alt without moving updates the label at once (review finding).
     await page.keyboard.down('Alt');
-    const p = await at(inPattern(page, 'snare'), 0.92);
-    await page.mouse.move(p.x, p.y);
     await expect(page.locator('.ghost')).not.toContainText('Copy');
+    await page.keyboard.up('Alt');
+    await expect(page.locator('.ghost')).toContainText('Copy');
+    await page.keyboard.down('Alt');
   });
   await page.keyboard.up('Alt');
   await expect.poll(() => shape(pattern(page))).toBe('kick snare clap');
@@ -213,6 +216,65 @@ test('Group, Mute and Delete work on a prep selection; a mixed selection cannot 
   await expect(barButton(page, 'Group')).toBeDisabled();
   await barButton(page, 'Delete').click();
   await expect.poll(() => shape(pattern(page))).toBe('');
+  if (!isMobile) await expect.poll(() => shape(prep(page))).toMatch(/^\w+\[clap rim\]$/);
+});
+
+test('08 guard: a drop 120 px below the pattern deletes and does not land in the prep area', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'mouse drag');
+  await load(page, [sq('kick'), sq('snare'), sq('clap')]);
+  const box = await pattern(page).boundingBox();
+  if (!box) throw new Error('no pattern');
+  await drag(page, inPattern(page, 'snare'), { x: box.x + 30, y: box.y + box.height + 120 });
+  await expect.poll(() => shape(pattern(page))).toBe('kick clap');
+  await expect(prep(page).locator('[data-node-id]')).toHaveCount(0);
+});
+
+test('after a prep → pattern drop, the next click selects, and the active area is unchanged', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'mouse drag');
+  await load(page, [sq('kick'), sq('snare')], [sq('clap')]);
+  await expect(pattern(page)).toHaveClass(/active/);
+  await drag(page, inPrep(page, 'clap'), await at(inPattern(page, 'snare'), 0.9));
+  await expect.poll(() => sounds(pattern(page))).toBe('Kick Snare Clap');
+  await expect(pattern(page)).toHaveClass(/active/);
+  await expect(prep(page)).not.toHaveClass(/active/);
+  await inPattern(page, 'kick').click();
+  await expect(inPattern(page, 'kick')).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Escape during a prep → pattern drag changes nothing, released over the pattern', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'mouse drag');
+  await load(page, [sq('kick'), sq('snare')], [sq('clap')]);
+  await inPattern(page, 'kick').click();
+  await drag(page, inPrep(page, 'clap'), await at(inPattern(page, 'snare'), 0.9), () =>
+    page.keyboard.press('Escape'),
+  );
+  await expect.poll(() => shape(pattern(page))).toBe('kick snare');
+  await expect.poll(() => shape(prep(page))).toBe('clap');
+  // Picking up clap selected it; Escape keeps that selection and the release does not change it.
+  await expect(inPrep(page, 'clap')).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('keyboard: the empty prep area can be focused and made active with Enter', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'keyboard');
+  await load(page, [sq('kick')]);
+  await prep(page).focus();
+  await page.keyboard.press('Enter');
+  await expect(prep(page)).toHaveClass(/active/);
+  await expect(prep(page)).toHaveAttribute('aria-current', 'true');
+  await paletteButton(page, 'Rim').click();
+  await expect.poll(() => sounds(prep(page))).toBe('Rim');
 });
 
 test('the prep area never plays; a copy from it while playing is heard on the next loop', async ({

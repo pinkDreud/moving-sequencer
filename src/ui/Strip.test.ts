@@ -108,6 +108,36 @@ describe('Strip rendering', () => {
   });
 });
 
+describe('Strip as the prep area', () => {
+  it('never marks a prep node as playing (a node just moved there from the pattern)', () => {
+    const app = makeApp('A', [], 'P');
+    render(Strip, { app, area: 'prep' });
+    app.playheadId = 'P';
+    flushSync();
+    const prep = screen.getByRole('region', { name: 'Prepare' });
+    expect(prep.querySelector('[data-node-id="P"]')).not.toHaveClass('playing');
+  });
+
+  it('while empty it is focusable, and Enter or Space on it makes it the active area', () => {
+    const app = makeApp('A');
+    render(Strip, { app, area: 'prep' });
+    const prep = screen.getByRole('region', { name: 'Prepare' });
+    expect(prep).toHaveAttribute('tabindex', '0');
+    expect(prep).not.toHaveAttribute('aria-current');
+    fireEvent.keyDown(prep, { key: 'Enter' });
+    expect(app.activeArea).toBe('prep');
+    expect(prep).toHaveAttribute('aria-current', 'true');
+    app.activeArea = 'pattern';
+    fireEvent.keyDown(prep, { key: ' ' });
+    expect(app.activeArea).toBe('prep');
+  });
+
+  it('is not an extra tab stop once it has squares (they are buttons)', () => {
+    render(Strip, { app: makeApp('A', [], 'P'), area: 'prep' });
+    expect(screen.getByRole('region', { name: 'Prepare' })).not.toHaveAttribute('tabindex');
+  });
+});
+
 describe('Strip selection', () => {
   it('a mouse click selects only this node', () => {
     const { app, byId } = renderStrip(['b', 'c']);
