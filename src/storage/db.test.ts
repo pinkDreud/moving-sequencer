@@ -93,18 +93,30 @@ describe('createDb', () => {
     expect(await db.loadRecordings()).toEqual([]);
   });
 
-  it('loads nothing, without throwing, when the store fails', async () => {
+  it('rejects when the song cannot be read, so a failed read is not mistaken for "no song"', async () => {
     const broken: UseStore = () => Promise.reject(new Error('blocked'));
-    const db = createDb(broken);
-    expect(await db.loadSong()).toBeNull();
-    expect(await db.loadRecordings()).toEqual([]);
+    await expect(createDb(broken).loadSong()).rejects.toThrow('blocked');
+  });
+
+  it('loads no recordings, without throwing, when the store fails', async () => {
+    const broken: UseStore = () => Promise.reject(new Error('blocked'));
+    expect(await createDb(broken).loadRecordings()).toEqual([]);
+  });
+
+  it('skips a recording stored under another id, and loads a duplicated id once', async () => {
+    const store = freshStore();
+    const db = createDb(store, clock());
+    await db.saveRecording(rec('rec-a', 'Rec 1'), new Blob(['1']));
+    const record = await get<Record<string, unknown>>('recording:rec-a', store);
+    await set('recording:rec-b', record, store); // sound.id rec-a under the key of rec-b
+    expect((await db.loadRecordings()).map((r) => r.sound.id)).toEqual(['rec-a']);
   });
 });
 
 describe('openDb', () => {
   const original = globalThis.indexedDB;
   afterEach(() => {
-    globalThis.indexedDB = original;
+    Object.defineProperty(globalThis, 'indexedDB', { configurable: true, writable: true, value: original });
   });
 
   it('opens a working store', async () => {
@@ -122,6 +134,23 @@ describe('openDb', () => {
     // @ts-expect-error: simulating a browser without IndexedDB
     delete globalThis.indexedDB;
     expect(await openDb()).toBeNull();
+  });
+
+  it('is null when reading indexedDB throws (storage blocked)', async () => {
+    Object.defineProperty(globalThis, 'indexedDB', {
+      configurable: true,
+      get() {
+        throw new DOMException('blocked', 'SecurityError');
+      },
+    });
+    await expect(openDb()).resolves.toBeNull();
+  });
+
+  it('is null when creating the store throws', async () => {
+    const store = () => {
+      throw new Error('InvalidStateError');
+    };
+    await expect(openDb({ store })).resolves.toBeNull();
   });
 
   it('is null when the store fails or hangs', async () => {

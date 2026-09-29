@@ -101,6 +101,39 @@ describe('createAutosave', () => {
   });
 });
 
+it('retries a write that failed: the change is still pending', async () => {
+  const timer = fakeTimer();
+  const save = vi.fn().mockRejectedValueOnce(new Error('connection lost')).mockResolvedValue(undefined);
+  const autosave = createAutosave({ save, saved: song(100), timer });
+  const changed = song(120);
+  autosave.update(changed);
+  await autosave.flush();
+  await autosave.flush();
+  expect(save).toHaveBeenCalledTimes(2);
+  expect(save).toHaveBeenLastCalledWith(changed);
+  await autosave.flush();
+  expect(save).toHaveBeenCalledTimes(2);
+});
+
+it('does not retry a failed write once a newer song is pending', async () => {
+  const timer = fakeTimer();
+  let fail!: (e: Error) => void; // assigned synchronously by the Promise constructor below
+  const save = vi
+    .fn()
+    .mockImplementationOnce(() => new Promise<void>((_, reject) => (fail = reject)))
+    .mockResolvedValue(undefined);
+  const autosave = createAutosave({ save, saved: song(100), timer });
+  autosave.update(song(120));
+  const first = autosave.flush();
+  const newer = song(130);
+  autosave.update(newer);
+  fail(new Error('connection lost'));
+  await first;
+  await autosave.flush();
+  expect(save).toHaveBeenCalledTimes(2);
+  expect(save).toHaveBeenLastCalledWith(newer);
+});
+
 describe('flushOnHide', () => {
   function page() {
     const win = new EventTarget();

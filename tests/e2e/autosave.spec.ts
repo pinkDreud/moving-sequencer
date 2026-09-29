@@ -67,3 +67,36 @@ test('without IndexedDB the app still works, without errors', async ({ page }) =
   await page.waitForTimeout(800);
   expect(errors).toEqual([]);
 });
+
+test('when reading IndexedDB throws (storage blocked) the app starts with the default song', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'indexedDB', {
+      configurable: true,
+      get() {
+        throw new DOMException('The operation is insecure.', 'SecurityError');
+      },
+    });
+  });
+  const errors = collectErrors(page);
+  await page.goto('./?fake-audio');
+  await expect(slots(page)).toHaveCount(8);
+  await paletteButton(page, 'Rim').click();
+  await expect(slots(page)).toHaveCount(9);
+  expect(errors).toEqual([]);
+});
+
+test('hiding the page writes a pending change at once, before the autosave delay', async ({ page }) => {
+  await page.goto('./?fake-audio');
+  await expect(slots(page)).toHaveCount(8);
+  await paletteButton(page, 'Clap').click();
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  // Well under the 500 ms debounce: only the flush can have written it.
+  await expect
+    .poll(async () => JSON.stringify(await storedSong(page)), { timeout: 300, intervals: [20] })
+    .toContain('"clap"');
+});

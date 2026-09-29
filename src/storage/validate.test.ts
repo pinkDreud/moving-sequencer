@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { group, square, type Song } from '../core/model';
+import { group, square, type SeqNode, type Song } from '../core/model';
 import { parseRecordingRecord, parseSong } from './validate';
 
 const valid = (): Song => ({
@@ -30,7 +30,25 @@ function tweak(edit: (song: Loose, track: Loose) => void): unknown {
   return copy;
 }
 
+/** A copy of `items` with index `at` left empty (a hole, as structured clone keeps them). */
+function withHole<T>(items: T[], at: number): T[] {
+  const out = [...items];
+  delete out[at];
+  return out;
+}
+
+/** `depth` groups nested inside each other around two squares. */
+function nested(depth: number): SeqNode {
+  let node: SeqNode = group('g0', [square('a0', null), square('b0', null)]);
+  for (let i = 1; i < depth; i++) node = group(`g${i}`, [node, square(`s${i}`, null)]);
+  return node;
+}
+
 describe('parseSong', () => {
+  it('accepts groups nested 32 deep', () => {
+    expect(parseSong(tweak((_, t) => (t.nodes = [nested(32)])))).not.toBeNull();
+  });
+
   it('accepts a valid song and returns an equal copy', () => {
     const data = valid();
     const song = parseSong(data);
@@ -81,6 +99,25 @@ describe('parseSong', () => {
       tweak((_, t) => (t.nodes = [square('a', null), group('g', [square('a', null)])])),
     ],
     ['a node id equal to the track id', tweak((_, t) => (t.nodes = [square('t1', null)]))],
+    ['a hole in the tracks', tweak((s) => (s.tracks = new Array(1)))],
+    ['a hole in the nodes', tweak((_, t) => (t.nodes = withHole([square('y', null), square('z', null)], 0)))],
+    [
+      'a hole in the children of a group',
+      tweak(
+        (_, t) =>
+          (t.nodes = [
+            {
+              ...group('g', []),
+              children: withHole([square('x', null), square('y', null), square('z', null)], 1),
+            },
+          ]),
+      ),
+    ],
+    ['groups nested deeper than 32', tweak((_, t) => (t.nodes = [nested(33)]))],
+    [
+      'more than 10 000 nodes',
+      tweak((_, t) => (t.nodes = Array.from({ length: 10_001 }, (_, i) => square(`n${i}`, null)))),
+    ],
   ])('rejects %s', (_, data) => {
     expect(parseSong(data)).toBeNull();
   });
@@ -110,6 +147,7 @@ describe('parseRecordingRecord', () => {
     ['data that is not an ArrayBuffer', { ...record(), data: 'bytes' }],
     ['a type that is not a string', { ...record(), type: null }],
     ['no savedAt', { ...record(), savedAt: undefined }],
+    ['a savedAt that is not finite', { ...record(), savedAt: Number.NaN }],
   ])('rejects %s', (_, data) => {
     expect(parseRecordingRecord(data)).toBeNull();
   });

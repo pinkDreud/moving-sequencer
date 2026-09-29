@@ -101,6 +101,43 @@ describe('createRecordings with a store', () => {
     expect(store.deleteRecording).toHaveBeenCalledWith(sound.id);
   });
 
+  it('does not wait for the storage write to make the sound available', async () => {
+    const store = {
+      saveRecording: vi.fn(() => new Promise<void>(() => {})),
+      deleteRecording: vi.fn(() => Promise.resolve()),
+    };
+    const { state, recordings } = withStore(store);
+    const sound = await recordings.add(new Blob(['x']));
+    expect(state.sounds.at(-1)).toBe(sound);
+  });
+
+  it('a delete during the save runs after it, so the recording does not come back', async () => {
+    const order: string[] = [];
+    let saved: () => void = () => {};
+    const store = {
+      saveRecording: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            saved = () => {
+              order.push('saved');
+              resolve();
+            };
+          }),
+      ),
+      deleteRecording: vi.fn(() => {
+        order.push('deleted');
+        return Promise.resolve();
+      }),
+    };
+    const { recordings } = withStore(store);
+    const sound = await recordings.add(new Blob(['x']));
+    recordings.remove(sound.id);
+    await Promise.resolve();
+    expect(store.deleteRecording).not.toHaveBeenCalled();
+    saved();
+    await vi.waitFor(() => expect(order).toEqual(['saved', 'deleted']));
+  });
+
   it('keeps the sound for this session when the store fails', async () => {
     const failing = {
       saveRecording: vi.fn(() => Promise.reject(new Error('QuotaExceededError'))),
@@ -130,6 +167,17 @@ describe('restoreRecordings', () => {
     expect(sounds).toEqual([a, b]);
     expect(engine.loaded.get('rec-a')).toEqual(buffer(1));
     expect(engine.loaded.get('rec-b')).toEqual(buffer(2));
+  });
+
+  it('skips a recording whose decode throws synchronously', async () => {
+    const engine = new FakeEngine();
+    const a: Sound = { id: 'rec-a', name: 'Rec 1', color: '#fff', source: 'recording' };
+    const decode = vi.fn((): Promise<AudioBuffer> => {
+      throw new Error('OfflineAudioContext unavailable');
+    });
+    await expect(
+      restoreRecordings([{ sound: a, blob: new Blob(['1']) }], { decode, engine }),
+    ).resolves.toEqual([]);
   });
 
   it('skips a recording that fails to decode', async () => {

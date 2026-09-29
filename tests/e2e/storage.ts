@@ -20,6 +20,12 @@ function onStore<T>(
         open.onerror = () => reject(open.error);
         open.onsuccess = () => {
           const db = open.result;
+          if (!db.objectStoreNames.contains(store)) {
+            // Opening first created an empty database, which would break the app's saving on this origin.
+            db.close();
+            reject(new Error('the app has not created its database yet: load the page first'));
+            return;
+          }
           const objects = db.transaction(store, mode).objectStore(store);
           const request =
             op === 'get'
