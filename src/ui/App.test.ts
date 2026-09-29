@@ -14,4 +14,10 @@ describe('App', () => {
     render(App, { app: makeApp() });
     expect(screen.getByRole('heading', { name: 'Moving Sequencer' })).toBeInTheDocument();
   });
+
+  it('shows the editable pattern and the palette', () => {
+    render(App, { app: makeApp() });
+    expect(screen.getByRole('region', { name: 'Pattern' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Sounds' })).toBeInTheDocument();
+  });
 });

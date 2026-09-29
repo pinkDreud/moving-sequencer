@@ -22,3 +22,17 @@ body {
   background: var(--bg);
   color: var(--fg);
 }
+
+/* Strip geometry (07), shared with drag & drop (08). Slots stay ≥ 44 px so they are touch targets. */
+:root {
+  --surface: #1f1f29;
+  --slot-size: 56px;
+  --slot-gap: 6px;
+}
+
+@media (max-width: 480px) {
+  :root {
+    --slot-size: 44px;
+    --slot-gap: 5px;
+  }
+}
