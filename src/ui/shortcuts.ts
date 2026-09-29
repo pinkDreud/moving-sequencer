@@ -6,6 +6,7 @@ export interface KeyLike {
   ctrlKey: boolean;
   metaKey: boolean;
   altKey: boolean;
+  repeat: boolean;
   target: EventTarget | null;
 }
 

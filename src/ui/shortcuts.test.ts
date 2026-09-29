@@ -7,6 +7,7 @@ const key = (k: string, extra: Partial<KeyLike> = {}): KeyLike => ({
   ctrlKey: false,
   metaKey: false,
   altKey: false,
+  repeat: false,
   target: document.body,
   ...extra,
 });
@@ -44,6 +45,10 @@ describe('shortcutFor', () => {
     const editable = document.createElement('div');
     editable.setAttribute('contenteditable', 'true'); // jsdom does not reflect the property
     expect(shortcutFor(key('m', { target: editable }))).toBeNull();
+  });
+
+  it('ignores auto-repeat, so holding M does not flip mute on and off', () => {
+    expect(shortcutFor(key('m', { repeat: true }))).toBeNull();
   });
 
   it('works when focus is on a button', () => {
