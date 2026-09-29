@@ -11,15 +11,15 @@ Groups inside a slot swing along with it (their tuplets are stretched or squeeze
 
 ## Design
 
-Time is warped instead of shifting individual notes. With swing `s` (0–0.75), a pair of slots covering `[0, 2)`
-maps position `p` to swung position:
+Time is warped instead of shifting individual notes. With the offbeat delay `d` (in slots, derived from the swing
+knob), within each pair of slots `[0, 2)`:
 
-- `p < 1` → `p · (1 + s/… )`: the first slot is stretched to length `1 + d`.
-- `p ≥ 1` → the second slot is squeezed to length `1 − d`.
+- `0 ≤ p < 1` → `warp(p) = p · (1 + d)`: the first slot is stretched to length `1 + d`.
+- `1 ≤ p < 2` → `warp(p) = (1 + d) + (p − 1) · (1 − d)`: the second slot is squeezed to length `1 − d`.
 
-Here `d = s / 2` (the offbeat moves by `d` slots; 50 % swing → offbeat at 1.25, i.e. a triplet feel at ≈ 66 %). The
-exact mapping between the knob and `d` is fixed in the spec refinement step. `warp(p)` and its inverse `unwarp(p)`
-are pure functions in `core/timing.ts`.
+The pair still lasts exactly 2 slots, so the loop length is unchanged. Knob → delay: `d = swing` as a fraction of a
+slot, with `swing ∈ [0, 0.75]`. 0 = straight, ≈ 0.33 = triplet feel (the offbeat lands at 4/3), 0.75 = hard
+dotted feel. `warp(p)` and its inverse `unwarp(p)` are pure functions in `core/timing.ts`.
 
 ## Acceptance criteria
 
