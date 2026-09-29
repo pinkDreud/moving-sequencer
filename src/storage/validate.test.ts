@@ -123,6 +123,20 @@ describe('parseSong', () => {
   });
 });
 
+describe('parseSong tempo factor', () => {
+  it('accepts ½×, 1× and 2×', () => {
+    for (const f of [0.5, 1, 2]) expect(parseSong(tweak((s) => (s.tempoFactor = f)))?.tempoFactor).toBe(f);
+  });
+
+  it('leaves a missing factor missing (older saves: it means 1×)', () => {
+    expect(parseSong(valid())?.tempoFactor).toBeUndefined();
+  });
+
+  it('rejects any other factor', () => {
+    for (const f of [3, 0, -1, '2', null]) expect(parseSong(tweak((s) => (s.tempoFactor = f)))).toBeNull();
+  });
+});
+
 describe('parseRecordingRecord', () => {
   const record = () => ({
     sound: { id: 'rec-a', name: 'Rec 1', color: '#fff', source: 'recording' },

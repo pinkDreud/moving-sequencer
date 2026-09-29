@@ -83,3 +83,22 @@ test('transport controls are touch-sized and fit a 360 px wide screen', async ({
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 });
+
+test('2× speed halves the gap between scheduled notes', async ({ page }) => {
+  await page.goto('./?fake-audio');
+  await page.waitForFunction(() => window.__seqTest !== undefined);
+  const gap = async () => {
+    await page.evaluate(() => (window.__seqTest!.engine.log.length = 0));
+    await expect
+      .poll(() => page.evaluate(() => window.__seqTest!.engine.log.length))
+      .toBeGreaterThanOrEqual(4);
+    const when = await page.evaluate(() => window.__seqTest!.engine.log.map((e) => e.when));
+    return (when[3]! - when[1]!) / 2;
+  };
+  await page.getByRole('button', { name: 'Play' }).click();
+  const normal = await gap();
+  await page.getByRole('radio', { name: '2×' }).check();
+  await page.waitForTimeout(300);
+  const fast = await gap();
+  expect(fast).toBeCloseTo(normal / 2, 2);
+});

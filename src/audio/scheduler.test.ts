@@ -356,3 +356,30 @@ describe('positionAt', () => {
     expect(s.scheduler.positionAt(0.6)).toBeCloseTo(0.2, 9);
   });
 });
+
+describe('tempo factor', () => {
+  it('2× plays the slots twice as fast, ½× half as fast', () => {
+    const fast = setup([a, b, c, d]);
+    fast.edit({ tempoFactor: 2 });
+    fast.scheduler.start();
+    fast.runUntil(0.4);
+    expect(fast.events().slice(0, 3)).toEqual(['a@0.050', 'b@0.175', 'c@0.300']);
+
+    const slow = setup([a, b, c, d]);
+    slow.edit({ tempoFactor: 0.5 });
+    slow.scheduler.start();
+    slow.runUntil(1.2);
+    expect(slow.events().slice(0, 3)).toEqual(['a@0.050', 'b@0.550', 'c@1.050']);
+  });
+
+  it('switching mid-play keeps the loop position and applies from the next note', () => {
+    const t = setup([a, b, c, d]);
+    t.scheduler.start();
+    // By 0.3 s the lookahead has scheduled up to slot 1.4 (at 0.4 s): a and b are already queued.
+    t.runUntil(0.3);
+    t.edit({ tempoFactor: 2 });
+    t.runUntil(0.6);
+    // From slot 1.4 on, slots last 0.125 s: c (slot 2) at 0.4 + 0.6·0.125, d one slot later.
+    expect(t.events().slice(0, 4)).toEqual(['a@0.050', 'b@0.300', 'c@0.475', 'd@0.600']);
+  });
+});
