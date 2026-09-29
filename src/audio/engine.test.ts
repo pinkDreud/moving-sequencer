@@ -22,6 +22,15 @@ describe('FakeEngine', () => {
     ]);
     expect(engine.stopAllCount).toBe(1);
   });
+
+  it('keeps loaded buffers by sound id and forgets unloaded ones', () => {
+    const engine = new FakeEngine();
+    const buffer = { duration: 1 } as unknown as AudioBuffer;
+    engine.load('rec-a', buffer);
+    expect(engine.loaded.get('rec-a')).toBe(buffer);
+    engine.unload('rec-a');
+    expect(engine.loaded.has('rec-a')).toBe(false);
+  });
 });
 
 describe('RealtimeFakeEngine', () => {
@@ -127,6 +136,13 @@ describe('WebAudioEngine', () => {
     expect(first?.connections).toEqual([context.gains[0]]);
     expect(first?.startedAt).toEqual([1.25]);
     expect(second?.startedAt).toEqual([1.5]);
+  });
+
+  it('does not play an unloaded sound', () => {
+    const { context, engine } = webEngine();
+    engine.unload('kick');
+    engine.play('kick', 1);
+    expect(context.sources).toHaveLength(0);
   });
 
   it('ignores unknown sound ids', () => {

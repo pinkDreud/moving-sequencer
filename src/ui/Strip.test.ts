@@ -83,10 +83,17 @@ describe('Strip rendering', () => {
     );
   });
 
-  it('labels an unknown sound with its id', () => {
-    const app = makeApp([square('x', 'rec-1')]);
+  it('renders a square whose sound is missing as silent, and shows the sound once it exists', () => {
+    const app = makeApp([square('x', 'rec-1'), square('y', 'rec-1', true)]);
     render(Strip, { app });
-    expect(screen.getByRole('button', { name: 'rec-1' })).toBeInTheDocument();
+    const x = screen.getByRole('button', { name: 'silent' });
+    expect(x).toHaveClass('silent');
+    expect(screen.getByRole('button', { name: 'silent, muted' })).toHaveClass('silent');
+    expect(app.track.nodes[0]).toMatchObject({ soundId: 'rec-1' }); // the sound id is kept
+    app.addSound({ id: 'rec-1', name: 'Rec 1', color: '#abc', source: 'recording' });
+    flushSync();
+    expect(x).toHaveAccessibleName('Rec 1');
+    expect(x).not.toHaveClass('silent');
   });
 
   it('marks the leaf under the playhead as playing, and follows it', () => {
