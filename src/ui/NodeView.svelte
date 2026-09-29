@@ -155,4 +155,11 @@
     outline-offset: -3px;
     box-shadow: inset 0 0 0 5px rgb(0 0 0 / 0.45);
   }
+
+  /* The rule above outranks `.square.playing`; a selected square under the playhead must still light up. */
+  .children > :global(.square.selected.playing) {
+    box-shadow:
+      inset 0 0 0 5px #fff,
+      0 0 12px 2px var(--color, #fff);
+  }
 </style>
