@@ -6,9 +6,12 @@ import { FakeEngine } from './engine';
 import { createScheduler, type SchedulerOptions, type Timer } from './scheduler';
 
 vi.mock('../core/timeline', { spy: true });
-beforeEach(() => vi.mocked(buildTimeline).mockClear());
+// A returned function would be run as teardown, hence the braces.
+beforeEach(() => {
+  vi.mocked(buildTimeline).mockClear();
+});
 
-const [a, b, c, d] = (['a', 'b', 'c', 'd'] as const).map((s) => square(s, s));
+const [a, b, c, d] = [square('a', 'a'), square('b', 'b'), square('c', 'c'), square('d', 'd')] as const;
 
 class FakeTimer implements Timer {
   callback: (() => void) | undefined;
