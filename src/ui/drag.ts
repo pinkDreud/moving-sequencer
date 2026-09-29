@@ -6,6 +6,8 @@ export interface PointerLike {
   pointerType: string;
   clientX: number;
   clientY: number;
+  /** Buttons held; 0 on a mouse/pen move means the pointerup was lost. */
+  buttons?: number;
 }
 
 export interface GestureCallbacks<T> {
@@ -28,11 +30,20 @@ export interface Gesture<T> {
   down(e: PointerLike, payload: T): void;
   move(e: PointerLike): void;
   up(e: PointerLike): void;
-  /** Escape / pointercancel / lost capture. */
-  cancel(): void;
+  /** Escape, blur, or a `pointercancel` (pass it, so other pointers' cancels are ignored). */
+  cancel(e?: Pick<PointerLike, 'pointerId'>): void;
   readonly dragging: boolean;
-  /** True once after a drop: the browser's click that follows pointerup must not change the selection. */
-  consumeClick(): boolean;
+  /**
+   * Any pointerdown on the page (capture phase). The click that belongs to a drop always comes before the next
+   * press, so this ends the swallow: a drop whose click never arrived (touch, release elsewhere) can't eat a later one.
+   * (A timer can't do this: Chrome runs queued input before `setTimeout(0)` callbacks.)
+   */
+  pressedAnywhere(): void;
+  /**
+   * True for the click the browser dispatches right after a drop (or after releasing an aborted drag): it must
+   * not change the selection. Keyboard clicks are never swallowed.
+   */
+  consumeClick(fromKeyboard?: boolean): boolean;
 }
 
 type State<T> =
@@ -46,14 +57,16 @@ type State<T> =
       payload: T;
       timer?: ReturnType<typeof setTimeout>;
     }
-  | { kind: 'dragging'; id: number };
+  | { kind: 'dragging'; id: number; touch: boolean }
+  /** Cancelled while the button/finger is still down: its release must not act as a click. */
+  | { kind: 'aborted'; id: number };
 
 const pointOf = (e: PointerLike): Point => ({ x: e.clientX, y: e.clientY });
 const far = (a: Point, b: Point, limit: number) => Math.hypot(a.x - b.x, a.y - b.y) > limit;
 
 /**
  * Pointer gesture state machine: mouse/pen drag after a small movement; touch drags only after a long
- * press, so a quick swipe still scrolls and a tap still selects.
+ * press, so a quick swipe still scrolls and a tap still selects. One pointer at a time.
  */
 export function createGesture<T>(
   cb: GestureCallbacks<T>,
@@ -67,24 +80,28 @@ export function createGesture<T>(
     state = { kind: 'idle' };
   }
 
-  function cancel(): void {
+  function cancel(e?: Pick<PointerLike, 'pointerId'>): void {
+    if (state.kind === 'idle' || (e && e.pointerId !== state.id)) return;
     if (state.kind === 'dragging') {
-      state = { kind: 'idle' };
+      state = { kind: 'aborted', id: state.id };
       cb.onCancel();
-    } else reset();
+    } else if (state.kind === 'pending') reset();
   }
 
   function begin(p: Point): void {
     if (state.kind !== 'pending') return;
-    const { id, payload } = state;
+    const { id, touch, payload } = state;
     clearTimeout(state.timer);
-    state = { kind: 'dragging', id };
+    state = { kind: 'dragging', id, touch };
     cb.onStart(payload, p);
   }
 
   return {
     down(e, payload) {
+      // Another finger while one is active is ignored; the same pointer again means its pointerup was lost.
+      if (state.kind !== 'idle' && e.pointerId !== state.id) return;
       cancel();
+      reset();
       swallowClick = false;
       const touch = e.pointerType === 'touch';
       const start = pointOf(e);
@@ -93,9 +110,12 @@ export function createGesture<T>(
       state = pending;
     },
     move(e) {
-      if (state.kind === 'idle' || e.pointerId !== state.id) return;
+      if (state.kind === 'idle' || state.kind === 'aborted' || e.pointerId !== state.id) return;
       const p = pointOf(e);
-      if (state.kind === 'dragging') return cb.onMove(p);
+      if (state.kind === 'dragging') {
+        if (!state.touch && e.buttons === 0) return cancel();
+        return cb.onMove(p);
+      }
       state.last = p;
       if (state.touch) {
         if (far(p, state.start, touchSlop)) reset();
@@ -110,16 +130,22 @@ export function createGesture<T>(
         state = { kind: 'idle' };
         swallowClick = true;
         cb.onDrop(pointOf(e));
+      } else if (state.kind === 'aborted') {
+        state = { kind: 'idle' };
+        swallowClick = true;
       } else reset();
     },
     cancel,
+    pressedAnywhere() {
+      swallowClick = false;
+    },
     get dragging() {
       return state.kind === 'dragging';
     },
-    consumeClick() {
-      const swallow = swallowClick;
+    consumeClick(fromKeyboard = false) {
+      if (fromKeyboard || !swallowClick) return false;
       swallowClick = false;
-      return swallow;
+      return true;
     },
   };
 }

@@ -87,8 +87,17 @@ export function dropTarget(
   const outside = Math.max(distance(p.x, strip.left, strip.right), distance(p.y, strip.top, strip.bottom));
   if (outside > deleteMargin) return { kind: 'delete' };
 
-  // Innermost element under the pointer decides.
-  const hit = items.filter((i) => contains(i.rect, p)).sort((a, b) => b.depth - a.depth)[0];
+  // Innermost element under the pointer decides. Groups clip their children, so a child only counts where it is
+  // visible: the pointer must be inside every ancestor too.
+  const byId = new Map(items.map((i) => [i.id, i]));
+  const visibleAt = (item: LayoutItem): boolean => {
+    for (let a = item.parentId === null ? undefined : byId.get(item.parentId); a;) {
+      if (!contains(a.rect, p)) return false;
+      a = a.parentId === null ? undefined : byId.get(a.parentId);
+    }
+    return true;
+  };
+  const hit = items.filter((i) => contains(i.rect, p) && visibleAt(i)).sort((a, b) => b.depth - a.depth)[0];
   if (hit?.kind === 'square') return beside(hit, p.x >= centerX(hit.rect));
   if (hit?.kind === 'group') {
     const edge = (hit.rect.right - hit.rect.left) * groupEdge;

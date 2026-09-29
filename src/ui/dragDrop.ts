@@ -1,7 +1,7 @@
 // Glue between the DOM, the pure drop hit-testing and the ops, for drag & drop in the Strip.
 import type { Drop, LayoutItem } from '../core/dropTarget';
-import type { NodeId } from '../core/model';
-import { move, remove } from '../core/ops';
+import type { NodeId, Track } from '../core/model';
+import { findLocation, move, remove } from '../core/ops';
 import type { AppState } from '../state.svelte';
 
 /**
@@ -30,9 +30,15 @@ export function readLayout(strip: HTMLElement): LayoutItem[] {
   });
 }
 
-/** Dragging a selected node drags the whole selection; an unselected one is dragged alone. */
-export function dragIds(selection: ReadonlySet<NodeId>, pressed: NodeId): NodeId[] {
-  return selection.has(pressed) ? [...selection] : [pressed];
+/**
+ * Dragging a selected node, or a node inside a selected group, drags the whole selection (a group's frame is too
+ * thin to grab on touch). Anything else is dragged alone.
+ */
+export function dragIds(track: Track, selection: ReadonlySet<NodeId>, pressed: NodeId): NodeId[] {
+  for (let id: NodeId | null = pressed; id !== null; id = findLocation(track, id)?.parentId ?? null) {
+    if (selection.has(id)) return [...selection];
+  }
+  return [pressed];
 }
 
 /** Applies a drop: move the dragged nodes, or delete them. */

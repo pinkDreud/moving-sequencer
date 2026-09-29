@@ -1,7 +1,7 @@
 <script lang="ts">
   import { dropTarget, type Drop, type Point } from '../core/dropTarget';
   import type { NodeId } from '../core/model';
-  import { findNode } from '../core/ops';
+  import { findNode, move } from '../core/ops';
   import type { AppState } from '../state.svelte';
   import { createGesture } from './drag';
   import { applyDrop, dragIds, readLayout } from './dragDrop';
@@ -11,41 +11,49 @@
   let { app }: { app: AppState } = $props();
 
   let stripEl: HTMLElement | undefined = $state();
-  interface DragState {
-    ids: NodeId[];
-    point: Point;
-    drop: Drop | null;
-  }
-  let drag = $state.raw<DragState | null>(null);
-  const draggingIds = $derived(new Set<NodeId>(drag?.ids ?? []));
+  /** Set at pick-up, cleared at drop/cancel: kept apart from the per-move state so nodes don't re-render on moves. */
+  let dragged: ReadonlySet<NodeId> = $state.raw(new Set());
+  let drag = $state.raw<{ point: Point; drop: Drop | null } | null>(null);
 
   function dropAt(p: Point): Drop | null {
     // Measured on every move: cheap for a pattern's worth of nodes, and always right after scroll/resize/wrap.
     return stripEl ? dropTarget(p, readLayout(stripEl), stripEl.getBoundingClientRect()) : null;
   }
 
+  /** A drop that would change nothing (onto the dragged nodes themselves) draws no insertion line. */
+  function changes(drop: Drop | null): boolean {
+    if (drop?.kind !== 'move') return drop !== null;
+    return move(app.track, [...dragged], drop.target) !== app.track;
+  }
+
+  function end(): void {
+    drag = null;
+    dragged = new Set();
+  }
+
   const gesture = createGesture<NodeId>({
     onStart(id, point) {
-      if (!app.selection.has(id)) app.select([id]);
-      drag = { ids: dragIds(app.selection, id), point, drop: dropAt(point) };
+      const ids = dragIds(app.track, app.selection, id);
+      // Picking up something outside the selection makes it the selection.
+      if (!ids.some((i) => app.selection.has(i))) app.select(ids);
+      dragged = new Set(ids);
+      drag = { point, drop: dropAt(point) };
     },
     onMove(point) {
-      if (drag) drag = { ...drag, point, drop: dropAt(point) };
+      if (drag) drag = { point, drop: dropAt(point) };
     },
     onDrop(point) {
-      const ids = drag?.ids;
-      drag = null;
+      const ids = [...dragged];
+      end();
       const drop = dropAt(point);
-      if (ids && drop) applyDrop(app, ids, drop);
+      if (ids.length > 0 && drop) applyDrop(app, ids, drop);
     },
-    onCancel() {
-      drag = null;
-    },
+    onCancel: end,
   });
 
   /** What the ghost shows: the color of each dragged node (null for groups and silent squares). */
   const ghost = $derived(
-    (drag?.ids ?? []).map((id) => {
+    [...dragged].map((id) => {
       const node = findNode(app.track, id);
       const soundId = node?.kind === 'square' ? node.soundId : null;
       return soundId === null ? null : (app.soundById(soundId)?.color ?? null);
@@ -64,11 +72,17 @@
     const ontouchmove = (e: TouchEvent) => {
       if (gesture.dragging) e.preventDefault();
     };
+    // Switching app/tab mid-drag loses the pointerup: never leave a drag hanging to drop on the next click.
+    const abandon = () => gesture.cancel();
     window.addEventListener('keydown', onkeydown, true);
     window.addEventListener('touchmove', ontouchmove, { passive: false });
+    window.addEventListener('blur', abandon);
+    document.addEventListener('visibilitychange', abandon);
     return () => {
       window.removeEventListener('keydown', onkeydown, true);
       window.removeEventListener('touchmove', ontouchmove);
+      window.removeEventListener('blur', abandon);
+      document.removeEventListener('visibilitychange', abandon);
       gesture.cancel();
     };
   });
@@ -91,8 +105,8 @@
   }
 
   function onclick(e: MouseEvent) {
-    // The click that ends a drag is not a selection click.
-    if (gesture.consumeClick()) return;
+    // The click that ends a drag is not a selection click (detail 0 = keyboard click, never swallowed).
+    if (gesture.consumeClick(e.detail === 0)) return;
     // detail 0 = click made by the keyboard (Enter/Space), whatever pointer was pressed before.
     const fromPointer = e.detail > 0;
     const own = 'pointerType' in e ? String(e.pointerType) : '';
@@ -111,9 +125,10 @@
 </script>
 
 <svelte:window
+  onpointerdowncapture={() => gesture.pressedAnywhere()}
   onpointermove={(e) => gesture.move(e)}
   onpointerup={(e) => gesture.up(e)}
-  onpointercancel={() => gesture.cancel()}
+  onpointercancel={(e) => gesture.cancel(e)}
 />
 
 <!-- Keyboard users reach every node through its own <button>; clicks bubble here so one handler serves them all. -->
@@ -129,12 +144,12 @@
   oncontextmenu={(e) => e.preventDefault()}
 >
   {#each app.track.nodes as node (node.id)}
-    <NodeView {node} {app} dragging={draggingIds} />
+    <NodeView {node} {app} dragging={dragged} />
   {/each}
 </section>
 
 {#if drag}
-  {#if drag.drop?.kind === 'move'}
+  {#if drag.drop?.kind === 'move' && changes(drag.drop)}
     {@const { x, top, bottom } = drag.drop.indicator}
     <div class="drop-indicator" style:left="{x}px" style:top="{top}px" style:height="{bottom - top}px"></div>
   {/if}

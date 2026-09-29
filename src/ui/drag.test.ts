@@ -173,10 +173,10 @@ describe('click swallowing', () => {
     gesture.up(at(10, 0));
   };
 
-  it('only lasts for the click dispatched right after the pointerup (no leak to a later click)', () => {
+  it('ends at the next press anywhere, so it never leaks to a later click (e.g. after a touch drag)', () => {
     const { gesture } = setup();
     dragAndDrop(gesture);
-    vi.advanceTimersByTime(0);
+    gesture.pressedAnywhere();
     expect(gesture.consumeClick()).toBe(false);
   });
 
