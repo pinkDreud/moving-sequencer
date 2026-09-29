@@ -82,6 +82,14 @@ Two parts:
 - Known limit: if a group's first child is itself a group, "before the inner group, inside the outer one" has no
   pointer position. The same structure can be reached in two moves.
 
+## Update 2026-09-29: drop a square onto a square (user report)
+
+"Dragging one square inside another one does not work": halves only meant before/after. Top-level squares now have
+three zones: outer quarters → before/after, middle half → **combine** (`Drop.kind === 'combine'`, drawn as a dashed
+outline around the target). `combine(track, ids, targetId, nextId)` moves the dragged nodes right after the target
+and applies `groupOrJoin`, so two squares form a new group and a dragged group absorbs the target square. Squares
+inside groups keep before/after only: they are too narrow for three zones, and nesting stays an explicit Group.
+
 ## Out of scope
 
 Lasso selection (a follow-up feature if still wanted), auto-scroll during drag of very long patterns, undo.

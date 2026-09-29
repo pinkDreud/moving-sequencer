@@ -7,13 +7,13 @@ slot (triplets, quintuplets, …) and ungroup them to spread them back out.
 **Play**: Play/Stop (or Space), BPM, and what one slot is worth (1/4, 1/8, 1/16).
 
 **Editing**: tap a sound in the palette to add a square (after the selection, or at the end). Click a square to
-select it; Shift/Cmd/Ctrl-click adds to the selection (on a phone every tap toggles). The selection bar mutes,
+select it; Shift/Cmd/Ctrl-click adds to the selection (on a phone every tap toggles). Group with a group (or a square inside one) plus squares next to it adds them to that group. The selection bar mutes,
 changes the sound, groups, ungroups or deletes. Keys: Delete/Backspace, M (mute), G (group), Shift+G (ungroup),
 Escape (clear selection).
 
 **Moving**: drag a square with the mouse, or long-press it on a phone and then move your finger. The yellow line
 shows where it lands, which can be between squares, inside a group, or out of a group. Dragging a selected square
-moves the whole selection, and a group moves as one block. Drop it well outside the pattern to delete it. Escape
+moves the whole selection, and a group moves as one block. Drop it on the **middle** of another square to group the two. Drop it well outside the pattern to delete it. Escape
 cancels. It all works while playing, and the change is heard on the next subdivision.
 
 **Recording**: press **Record** at the end of the palette, allow the microphone, make a sound, and press **Stop** (it
