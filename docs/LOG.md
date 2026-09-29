@@ -4,8 +4,9 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Current state
 
-- **Phase:** features 00–13 are done and live (632 unit, 156 e2e tests). Issue #1 is fixed, and updates now reach open pages.
-- **Next step:** review and merge 14 preparation area (worktree agent on `feat/14-prep-area`).
+- **Phase:** features 00–14 are done and live (691 unit, 197 e2e tests). All requests from the first feedback round are shipped.
+- **Next step:** user feedback on real devices (swing by ear, prep drag on a phone). Open ideas: auto-scroll while
+  dragging on phones, undo/redo, multi-track, branch protection on `main`.
   `feat/14-prep-area`).
   for Pages, or Cloudflare/Netlify), multi-track, undo/redo, lasso selection, export/import.
 - **Real-device checks pending:** how the kit sounds; iOS long-press drag; mic recording over `npm run dev:https`
@@ -25,6 +26,15 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-29 — 14 preparation area merged
+
+- A second, never-played strip (`app.prep`, kept out of `Song`). The drag gesture now lives in `Editor` and spans both
+  strips. `transfer` op (move / copy with fresh ids / combine), `dropTargetIn` over both areas. The "active area"
+  decides where palette taps append.
+- Prep → pattern copies (Alt moves; touch always copies), and pattern → prep moves. A mixed selection disables Group.
+- The reviewer confirmed no drag regressions (the 08 e2e suite is unchanged and green) and found 3 medium issues, all
+  fixed test-first. Known limit: no auto-scroll during a drag on phones.
 
 ### 2026-09-29 — 13 swing merged
 

@@ -16,6 +16,11 @@ shows where it lands, which can be between squares, inside a group, or out of a 
 moves the whole selection, and a group moves as one block. Drop it on the **middle** of another square to group the two. Drop it well outside the pattern to delete it. Escape
 cancels. It all works while playing, and the change is heard on the next subdivision.
 
+**Prepare**: the strip under the palette never plays. Tap it to make it the active strip: with nothing selected,
+palette taps then add squares there. Build a figure (group it if you like) and drag it into the pattern. That
+**copies** it, so you can drop it again; hold Alt/Option while dropping to **move** it instead. Dragging from the pattern
+into Prepare moves. It is scratch space: empty after a reload.
+
 **Recording**: press **Record** at the end of the palette, allow the microphone, make a sound, and press **Stop** (it
 stops by itself after 4 s). The recording becomes a new sound, "Rec 1", with the leading silence cut and the volume
 evened out. Use it like any other sound. Its × button deletes it (press twice); the squares that used it turn silent.
