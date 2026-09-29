@@ -269,7 +269,9 @@ test('keyboard: the empty prep area can be focused and made active with Enter', 
 }) => {
   test.skip(isMobile, 'keyboard');
   await load(page, [sq('kick')]);
-  await prep(page).focus();
+  await prep(page)
+    .getByRole('button', { name: /tap here/i })
+    .focus();
   await page.keyboard.press('Enter');
   await expect(prep(page)).toHaveClass(/active/);
   await expect(prep(page)).toHaveAttribute('aria-current', 'true');

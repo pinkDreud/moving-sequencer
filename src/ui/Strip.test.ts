@@ -118,23 +118,21 @@ describe('Strip as the prep area', () => {
     expect(prep.querySelector('[data-node-id="P"]')).not.toHaveClass('playing');
   });
 
-  it('while empty it is focusable, and Enter or Space on it makes it the active area', () => {
+  it('while empty its hint is a button: a keyboard click on it makes the prep area active', () => {
     const app = makeApp('A');
     render(Strip, { app, area: 'prep' });
     const prep = screen.getByRole('region', { name: 'Prepare' });
-    expect(prep).toHaveAttribute('tabindex', '0');
     expect(prep).not.toHaveAttribute('aria-current');
-    fireEvent.keyDown(prep, { key: 'Enter' });
+    const hint = within(prep).getByRole('button', { name: /tap here/i });
+    fireEvent.click(hint, { detail: 0 });
     expect(app.activeArea).toBe('prep');
     expect(prep).toHaveAttribute('aria-current', 'true');
-    app.activeArea = 'pattern';
-    fireEvent.keyDown(prep, { key: ' ' });
-    expect(app.activeArea).toBe('prep');
   });
 
-  it('is not an extra tab stop once it has squares (they are buttons)', () => {
+  it('has no hint button once it has squares', () => {
     render(Strip, { app: makeApp('A', [], 'P'), area: 'prep' });
-    expect(screen.getByRole('region', { name: 'Prepare' })).not.toHaveAttribute('tabindex');
+    const prep = screen.getByRole('region', { name: 'Prepare' });
+    expect(within(prep).queryByRole('button', { name: /tap here/i })).toBeNull();
   });
 });
 

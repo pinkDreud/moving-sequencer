@@ -7,7 +7,14 @@
     node,
     app,
     dragging = new Set(),
-  }: { node: SeqNode; app: AppState; dragging?: ReadonlySet<NodeId> } = $props();
+    live = true,
+  }: {
+    node: SeqNode;
+    app: AppState;
+    dragging?: ReadonlySet<NodeId>;
+    /** False in the prep area, which never plays: no playhead highlight there. */
+    live?: boolean;
+  } = $props();
 
   const selected = $derived(app.selection.has(node.id));
 
@@ -34,7 +41,7 @@
     class:muted={node.muted}
     class:selected
     class:dragging={dragging.has(node.id)}
-    class:playing={app.playheadId === node.id}
+    class:playing={live && app.playheadId === node.id}
     data-node-id={node.id}
     aria-label={labelOf(node.muted)}
     aria-pressed={selected}
@@ -47,7 +54,7 @@
     ></button>
     <div class="children">
       {#each node.children as child (child.id)}
-        <NodeView node={child} {app} {dragging} />
+        <NodeView node={child} {app} {dragging} {live} />
       {/each}
     </div>
   </div>

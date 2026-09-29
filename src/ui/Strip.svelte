@@ -43,6 +43,8 @@
     lastPointerType = '';
   }
 
+  const active = $derived(app.activeArea === area);
+
   function onclick(e: MouseEvent) {
     // The click that ends a drag is not a selection click (detail 0 = keyboard click, never swallowed).
     if (gesture?.consumeClick(e.detail === 0)) return;
@@ -70,9 +72,10 @@
 <section
   class="strip"
   class:is-dragging={dragging.size > 0}
-  class:active={app.activeArea === area}
+  class:active
   class:prep={area === 'prep'}
   aria-label={area === 'pattern' ? 'Pattern' : 'Prepare'}
+  aria-current={active ? 'true' : undefined}
   bind:this={el}
   {onpointerdown}
   {onpointercancel}
@@ -80,10 +83,14 @@
   oncontextmenu={(e) => e.preventDefault()}
 >
   {#each track.nodes as node (node.id)}
-    <NodeView {node} {app} {dragging} />
+    <!-- Only the pattern plays: a node just moved into the prep area may still be the playhead's id. -->
+    <NodeView {node} {app} {dragging} live={area === 'pattern'} />
   {:else}
     {#if area === 'prep'}
-      <p class="hint">Tap here, then pick sounds to build a figure. Drag it into the pattern to copy it.</p>
+      <!-- A button, so keyboard users can make the empty area active too; its click bubbles to the strip. -->
+      <button type="button" class="hint">
+        Tap here, then pick sounds to build a figure. Drag it into the pattern to copy it.
+      </button>
     {/if}
   {/each}
 </section>
@@ -114,9 +121,15 @@
   }
 
   .hint {
-    align-self: center;
+    align-self: stretch;
+    flex: 1;
     margin: 0;
     padding: 0 4px;
+    border: 0;
+    background: none;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
     color: var(--muted);
     font-size: 0.9rem;
   }

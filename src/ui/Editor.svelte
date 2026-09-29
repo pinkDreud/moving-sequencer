@@ -102,7 +102,12 @@
   );
 
   $effect(() => {
+    // Alt pressed or released without moving the pointer: the Copy label must match what the release will do.
+    const onalt = (e: KeyboardEvent) => {
+      if (e.key === 'Alt' && drag) drag = { ...drag, alt: e.type === 'keydown' };
+    };
     const onkeydowncapture = (e: KeyboardEvent) => {
+      onalt(e);
       if (e.key !== 'Escape' || !gesture.dragging) return;
       // Capture phase, so the Escape shortcut (clear selection) does not also run.
       e.preventDefault();
@@ -116,11 +121,13 @@
     // Switching app/tab mid-drag loses the pointerup: never leave a drag hanging to drop on the next click.
     const abandon = () => gesture.cancel();
     window.addEventListener('keydown', onkeydowncapture, true);
+    window.addEventListener('keyup', onalt, true);
     window.addEventListener('touchmove', ontouchmove, { passive: false });
     window.addEventListener('blur', abandon);
     document.addEventListener('visibilitychange', abandon);
     return () => {
       window.removeEventListener('keydown', onkeydowncapture, true);
+      window.removeEventListener('keyup', onalt, true);
       window.removeEventListener('touchmove', ontouchmove);
       window.removeEventListener('blur', abandon);
       document.removeEventListener('visibilitychange', abandon);
@@ -174,7 +181,7 @@
     {#if ghost.length > 4}<span class="more">+{ghost.length - 4}</span>{/if}
     {#if drag.drop?.kind === 'delete'}
       <span class="label">Release to delete</span>
-    {:else if drag.drop && copies(from, drag.drop, drag.alt)}
+    {:else if drag.drop && copies(from, drag.drop, drag.alt) && changes(drag.drop, drag.alt)}
       <span class="label">Copy</span>
     {/if}
   </div>
