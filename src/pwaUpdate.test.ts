@@ -18,7 +18,7 @@ describe('watchForUpdates', () => {
     const sw = new FakeContainer(true);
     watchForUpdates({
       sw,
-      doc: new EventTarget() as Document,
+      doc: new EventTarget() as unknown as Document,
       url: '/x/sw.js',
       scope: '/x/',
       onUpdate: () => {},
@@ -30,7 +30,13 @@ describe('watchForUpdates', () => {
   it('reports an update when a new worker takes over a page that already had one', () => {
     const sw = new FakeContainer(true);
     const onUpdate = vi.fn();
-    watchForUpdates({ sw, doc: new EventTarget() as Document, url: 'sw.js', scope: './', onUpdate });
+    watchForUpdates({
+      sw,
+      doc: new EventTarget() as unknown as Document,
+      url: 'sw.js',
+      scope: './',
+      onUpdate,
+    });
     sw.dispatchEvent(new Event('controllerchange'));
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
@@ -38,7 +44,13 @@ describe('watchForUpdates', () => {
   it('stays quiet on the very first install (no previous worker: nothing is outdated)', () => {
     const sw = new FakeContainer(false);
     const onUpdate = vi.fn();
-    watchForUpdates({ sw, doc: new EventTarget() as Document, url: 'sw.js', scope: './', onUpdate });
+    watchForUpdates({
+      sw,
+      doc: new EventTarget() as unknown as Document,
+      url: 'sw.js',
+      scope: './',
+      onUpdate,
+    });
     sw.dispatchEvent(new Event('controllerchange'));
     expect(onUpdate).not.toHaveBeenCalled();
   });
@@ -56,7 +68,7 @@ describe('watchForUpdates', () => {
     expect(() =>
       watchForUpdates({
         sw: undefined,
-        doc: new EventTarget() as Document,
+        doc: new EventTarget() as unknown as Document,
         url: 'sw.js',
         scope: './',
         onUpdate: () => {},

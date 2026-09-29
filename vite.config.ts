@@ -7,6 +7,8 @@ import { VitePWA } from 'vite-plugin-pwa';
 const pwa = VitePWA({
   // New builds take over on the next visit, without a prompt.
   registerType: 'autoUpdate',
+  // Registered by src/pwaUpdate.ts, which also tells the page when a new version has taken over.
+  injectRegister: false,
   includeAssets: ['icons/apple-touch-icon.png', 'icons/icon.svg'],
   manifest: {
     name: 'Moving Sequencer',
@@ -23,7 +25,13 @@ const pwa = VitePWA({
       { src: 'icons/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
   },
-  workbox: { globPatterns: ['**/*.{js,css,html,png,svg}'] },
+  workbox: {
+    globPatterns: ['**/*.{js,css,html,png,svg}'],
+    // Take over at once. Without these the new worker waits until every tab and app window is closed, so users
+    // kept running old versions for days. Open pages then get the "New version available" bar.
+    skipWaiting: true,
+    clientsClaim: true,
+  },
 });
 
 // GitHub Pages serves the site from /moving-sequencer/; dev and preview use the same base.

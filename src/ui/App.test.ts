@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/svelte';
+import { flushSync } from 'svelte';
 import { describe, expect, it } from 'vitest';
 import { createIdGen } from '../core/model';
 import { AppState, defaultSong } from '../state.svelte';
+import { UpdateStatus } from '../updateStatus.svelte';
 import App from './App.svelte';
 
 function makeApp() {
@@ -19,5 +21,16 @@ describe('App', () => {
     render(App, { app: makeApp() });
     expect(screen.getByRole('region', { name: 'Pattern' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Sounds' })).toBeInTheDocument();
+  });
+});
+
+describe('App update bar', () => {
+  it('shows the update bar only once a new version is ready', async () => {
+    const update = new UpdateStatus();
+    render(App, { app: makeApp(), update });
+    expect(screen.queryByText('New version available')).toBeNull();
+    update.ready = true;
+    flushSync();
+    expect(screen.getByText('New version available')).toBeInTheDocument();
   });
 });
