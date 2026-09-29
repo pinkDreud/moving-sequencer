@@ -65,7 +65,8 @@ test('all slots have the same width, and a group splits its slot evenly', async 
   await expect(slots(page)).toHaveCount(6);
 
   const widths = await slots(page).evaluateAll((els) => els.map((el) => el.getBoundingClientRect().width));
-  expect(widths[0]).toBeGreaterThanOrEqual(44);
+  // Narrow phones shrink squares so 8 fit per row (≈ 34 px at 360 px).
+  expect(widths[0]).toBeGreaterThanOrEqual(30);
   for (const w of widths) expect(w).toBeCloseTo(widths[0] ?? 0, 1);
 
   const children = slots(page).first().locator(':scope > .children > [data-node-id]');
@@ -139,4 +140,26 @@ test('shift+click selects a range; Delete empties it; Ins adds an empty slot bef
   await expect(slots(page)).toHaveCount(9);
   await expect(slots(page).nth(6)).toHaveAttribute('aria-label', 'silent');
   await expect(slots(page).nth(7)).toHaveAttribute('aria-pressed', 'true');
+});
+
+for (const width of [320, 360, 412]) {
+  test(`a ${width} px wide screen fits at least 8 slots per row`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('./');
+    await expect(slots(page)).toHaveCount(8);
+    const tops = await slots(page).evaluateAll((els) =>
+      els.map((el) => Math.round(el.getBoundingClientRect().top)),
+    );
+    expect(new Set(tops).size).toBe(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  });
+}
+
+test('wide screens keep 56 px squares and fit more than 8 per row', async ({ page }) => {
+  await page.setViewportSize({ width: 1100, height: 800 });
+  await page.goto('./');
+  const width = await slots(page)
+    .first()
+    .evaluate((el) => el.getBoundingClientRect().width);
+  expect(width).toBeCloseTo(56, 0);
 });
