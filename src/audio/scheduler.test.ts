@@ -290,6 +290,15 @@ describe('robustness', () => {
     expect(s.scheduler.positionAt(1)).toBeCloseTo(3.8, 9);
   });
 
+  it('still plays an event that is late only by float error', () => {
+    const s = setup([a, b], { startOffset: 0 });
+    s.edit({ bpm: 60, slotValue: 4 }); // 1 s per slot
+    s.scheduler.start();
+    s.runUntil(0.9); // scheduled up to exactly B's start
+    s.tickAt(1 + 1e-12);
+    expect(s.events()).toEqual(['a@0.000', 'b@1.000']);
+  });
+
   it('schedules nothing and does not throw for an invalid tempo', () => {
     const s = setup([a, b]);
     s.edit({ bpm: 0 });
@@ -325,6 +334,18 @@ describe('positionAt', () => {
     expect(s.scheduler.positionAt(0.01)).toBe(0);
     s.scheduler.stop();
     expect(s.scheduler.positionAt(0.1)).toBeNull();
+  });
+
+  it('is 0 until the first event when squares are added to an empty pattern', () => {
+    const s = setup([]);
+    s.scheduler.start();
+    s.runUntil(0.5); // scheduled (nothing) up to 0.6 s
+    s.setNodes([a, b]);
+    expect(s.scheduler.positionAt(0.55)).toBe(0);
+    s.tickAt(0.525);
+    expect(s.events()).toEqual(['a@0.600']);
+    expect(s.scheduler.positionAt(0.55)).toBe(0);
+    expect(s.scheduler.positionAt(0.85)).toBeCloseTo(1, 9);
   });
 
   it('stays within the current pattern after it shrinks, before the next tick', () => {
