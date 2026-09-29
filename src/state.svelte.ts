@@ -1,3 +1,4 @@
+import { untrack } from 'svelte';
 import { KIT } from './audio/sounds';
 import {
   square,
@@ -44,9 +45,11 @@ export class AppState {
   playheadId: NodeId | null = $state(null);
   readonly nextId: IdGen;
 
-  constructor({ song, nextId }: { song: Song; nextId: IdGen }) {
+  /** `sounds` defaults to the kit; at startup it also holds the restored recordings. */
+  constructor({ song, nextId, sounds = KIT }: { song: Song; nextId: IdGen; sounds?: readonly Sound[] }) {
     this.song = song;
     this.nextId = nextId;
+    this.sounds = sounds;
   }
 
   get track(): Track {
@@ -82,11 +85,13 @@ export class AppState {
 
   setBpm(bpm: number): void {
     if (!Number.isFinite(bpm)) return;
-    this.song = { ...this.song, bpm: Math.round(Math.min(BPM_MAX, Math.max(BPM_MIN, bpm))) };
+    const clamped = Math.round(Math.min(BPM_MAX, Math.max(BPM_MIN, bpm)));
+    // Like the ops, an unchanged value keeps the song object (autosave compares references).
+    if (clamped !== this.song.bpm) this.song = { ...this.song, bpm: clamped };
   }
 
   setSlotValue(slotValue: SlotValue): void {
-    this.song = { ...this.song, slotValue };
+    if (slotValue !== this.song.slotValue) this.song = { ...this.song, slotValue };
   }
 
   soundById(id: string): Sound | undefined {
@@ -106,4 +111,15 @@ export class AppState {
     if (tracks.some((t, i) => t !== this.song.tracks[i])) this.song = { ...this.song, tracks };
     this.sounds = this.sounds.filter((s) => s.id !== id);
   }
+}
+
+/** Calls `callback` with the current song now and with every new song object after it; returns a stop function. */
+export function watchSong(app: AppState, callback: (song: Song) => void): () => void {
+  return $effect.root(() => {
+    $effect(() => {
+      const song = app.song;
+      // Only the song is a dependency, whatever the callback happens to read.
+      untrack(() => callback(song));
+    });
+  });
 }

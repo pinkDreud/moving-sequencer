@@ -3,16 +3,20 @@ import {
   RealtimeFakeEngine,
   unlockOnGesture,
   WebAudioEngine,
+  type AudioEngine,
   type FakeEngine,
   type SoundLoader,
 } from './audio/engine';
 import { renderKit } from './audio/kit';
 import { browserMic, decodeRecording, micAvailability, startRecording } from './audio/recorder';
-import { createRecordings } from './audio/recordings';
-import { createTransport, type Transport } from './audio/transport';
-import App from './ui/App.svelte';
+import { createRecordings, restoreRecordings } from './audio/recordings';
+import { KIT } from './audio/sounds';
+import { createTransport } from './audio/transport';
 import { RecordControl } from './recordControl.svelte';
-import { AppState, defaultSong, randomIdGen } from './state.svelte';
+import { AppState, defaultSong, randomIdGen, watchSong } from './state.svelte';
+import { createAutosave, flushOnHide } from './storage/autosave';
+import { openDb } from './storage/db';
+import App from './ui/App.svelte';
 import './ui/global.css';
 
 declare global {
@@ -22,26 +26,20 @@ declare global {
   }
 }
 
-const target = document.getElementById('app');
-if (!target) throw new Error('#app element missing');
-
-const nextId = randomIdGen();
-const app = new AppState({ song: defaultSong(nextId), nextId });
-
 interface Audio {
-  transport: Transport;
-  loader: SoundLoader;
+  engine: AudioEngine & SoundLoader;
+  fake?: FakeEngine;
+  unlock?: () => Promise<void>;
   decode(blob: Blob): Promise<AudioBuffer>;
 }
 
 function setupAudio(): Audio {
   if (new URLSearchParams(location.search).has('fake-audio')) {
     const engine = new RealtimeFakeEngine();
-    window.__seqTest = { engine, app };
     // Nothing plays, but recordings still go through the browser's real decoder.
     let offline: OfflineAudioContext | undefined;
     const decode = (blob: Blob) => decodeRecording(blob, (offline ??= new OfflineAudioContext(1, 1, 48_000)));
-    return { transport: createTransport({ engine, state: app }), loader: engine, decode };
+    return { engine, fake: engine, decode };
   }
   // iOS 16.4+: play through the ring/silent switch like a music app instead of like a UI sound.
   const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
@@ -49,25 +47,50 @@ function setupAudio(): Audio {
   const engine = new WebAudioEngine();
   for (const [soundId, buffer] of renderKit(engine.context)) engine.load(soundId, buffer);
   unlockOnGesture(engine);
-  return {
-    transport: createTransport({ engine, state: app, unlock: () => engine.unlock() }),
-    loader: engine,
-    decode: (blob) => decodeRecording(blob, engine.context),
-  };
+  return { engine, unlock: () => engine.unlock(), decode: (blob) => decodeRecording(blob, engine.context) };
 }
 
-const audio = setupAudio();
-const recordings = createRecordings({ state: app, engine: audio.loader, decode: audio.decode });
-const recording = new RecordControl({
-  availability: micAvailability({
-    isSecureContext: window.isSecureContext,
-    // Typed as always present, but browsers leave these out where they cannot record.
-    mediaDevices: navigator.mediaDevices as unknown,
-    MediaRecorder: (globalThis as { MediaRecorder?: unknown }).MediaRecorder,
-  }),
-  start: () => startRecording(browserMic()),
-  save: (blob) => recordings.add(blob),
-  remove: (id) => recordings.remove(id),
-});
+/**
+ * Startup: recordings first (so the saved song finds its sounds), then the song, then the UI. Mounting after
+ * loading means no flash of the default pattern and no edit lost to a late load. Any storage failure falls back
+ * to the default song, without saving.
+ */
+async function start(target: HTMLElement): Promise<void> {
+  const audio = setupAudio();
+  const db = await openDb();
+  const restored = db ? await restoreRecordings(await db.loadRecordings(), audio) : [];
+  const nextId = randomIdGen();
+  const song = (await db?.loadSong()) ?? defaultSong(nextId);
+  const app = new AppState({ song, nextId, sounds: [...KIT, ...restored] });
+  if (audio.fake) window.__seqTest = { engine: audio.fake, app };
 
-export default mount(App, { target, props: { app, transport: audio.transport, recording } });
+  if (db) {
+    const autosave = createAutosave({ save: (s) => db.saveSong(s), saved: song });
+    watchSong(app, (s) => autosave.update(s));
+    flushOnHide(autosave);
+  }
+
+  const recordings = createRecordings({
+    state: app,
+    engine: audio.engine,
+    decode: audio.decode,
+    store: db ?? undefined,
+  });
+  const recording = new RecordControl({
+    availability: micAvailability({
+      isSecureContext: window.isSecureContext,
+      // Typed as always present, but browsers leave these out where they cannot record.
+      mediaDevices: navigator.mediaDevices as unknown,
+      MediaRecorder: (globalThis as { MediaRecorder?: unknown }).MediaRecorder,
+    }),
+    start: () => startRecording(browserMic()),
+    save: (blob) => recordings.add(blob),
+    remove: (id) => recordings.remove(id),
+  });
+  const transport = createTransport({ engine: audio.engine, state: app, unlock: audio.unlock });
+  mount(App, { target, props: { app, transport, recording } });
+}
+
+const target = document.getElementById('app');
+if (!target) throw new Error('#app element missing');
+void start(target);

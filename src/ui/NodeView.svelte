@@ -15,8 +15,12 @@
     return soundId === null ? undefined : app.soundById(soundId);
   }
 
-  function labelOf(soundId: string | null, muted: boolean): string {
-    const name = soundId === null ? 'silent' : (soundOf(soundId)?.name ?? soundId);
+  // A sound that is gone (a recording that failed to load) plays nothing: show the square as silent. It keeps its
+  // sound id, so it comes back if the recording loads next time.
+  const sound = $derived(node.kind === 'square' ? soundOf(node.soundId) : undefined);
+
+  function labelOf(muted: boolean): string {
+    const name = sound?.name ?? 'silent';
     return muted ? `${name}, muted` : name;
   }
 </script>
@@ -26,15 +30,15 @@
   <button
     type="button"
     class="square"
-    class:silent={node.soundId === null}
+    class:silent={!sound}
     class:muted={node.muted}
     class:selected
     class:dragging={dragging.has(node.id)}
     class:playing={app.playheadId === node.id}
     data-node-id={node.id}
-    aria-label={labelOf(node.soundId, node.muted)}
+    aria-label={labelOf(node.muted)}
     aria-pressed={selected}
-    style:--color={soundOf(node.soundId)?.color}
+    style:--color={sound?.color}
   ></button>
 {:else}
   <div class="group" class:selected class:dragging={dragging.has(node.id)} data-node-id={node.id}>
