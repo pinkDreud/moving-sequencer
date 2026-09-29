@@ -1,6 +1,6 @@
 # 03 — Groups
 
-Status: in progress
+Status: done
 Branch: feat/01-03-core-ops
 
 ## Behaviour
@@ -27,28 +27,28 @@ feature adds the tree operations. Timing comes from the structure alone and is c
 
 ## Acceptance criteria
 
-- [ ] Grouping two adjacent root squares puts a new group (id from `nextId`) in their place; `groupId` is it.
-- [ ] Grouping non-contiguous siblings puts the group at the first one's position, children in document order,
+- [x] Grouping two adjacent root squares puts a new group (id from `nextId`) in their place; `groupId` is it.
+- [x] Grouping non-contiguous siblings puts the group at the first one's position, children in document order,
       whatever the order of `ids`: `A B C D E`, group `[D,B]` → `A g1[B D] C E`.
-- [ ] Grouping siblings inside a group nests a new group there: `A G[B C D]`, group C,D → `A G[B g1[C D]]`.
-- [ ] Groups can be grouped with squares: `G[A B] C`, group G,C → `g1[G[A B] C]`.
-- [ ] Grouping every root node gives one group holding the whole pattern.
-- [ ] `group` is a no-op (same track, `groupId: null`, `nextId` not called) for < 2 distinct known nodes,
+- [x] Grouping siblings inside a group nests a new group there: `A G[B C D]`, group C,D → `A G[B g1[C D]]`.
+- [x] Groups can be grouped with squares: `G[A B] C`, group G,C → `g1[G[A B] C]`.
+- [x] Grouping every root node gives one group holding the whole pattern.
+- [x] `group` is a no-op (same track, `groupId: null`, `nextId` not called) for < 2 distinct known nodes,
       different parents, or every child of a group.
-- [ ] `ungroup` puts the children in the group's place, at the root or inside the parent group.
-- [ ] `ungroup` returns the same track for an unknown id or a square id.
-- [ ] `group` followed by `ungroup` of the new group gives back the original structure.
-- [ ] Moving a square into a group adds a child there: `A B G[C D]`, move A into G at 1 → `B G[C A D]`.
-- [ ] Moving a child out of a 2-child group dissolves the group: `A G[B C] D`, move B to root 0 → `B A C D`.
-- [ ] Moving a child out to just after its group (root index as displayed) lands after the remaining child:
+- [x] `ungroup` puts the children in the group's place, at the root or inside the parent group.
+- [x] `ungroup` returns the same track for an unknown id or a square id.
+- [x] `group` followed by `ungroup` of the new group gives back the original structure.
+- [x] Moving a square into a group adds a child there: `A B G[C D]`, move A into G at 1 → `B G[C A D]`.
+- [x] Moving a child out of a 2-child group dissolves the group: `A G[B C] D`, move B to root 0 → `B A C D`.
+- [x] Moving a child out to just after its group (root index as displayed) lands after the remaining child:
       `A G[B C] D`, move B to root 2 → `A C B D`.
-- [ ] Moving all children out of a group removes the group: `A G[B C] D`, move B,C to root 4 → `A D B C`.
-- [ ] Moving out of a nested group dissolves only that group: `G[A H[B C]]`, move B into G at 0 → `G[B A C]`.
-- [ ] Moving a group into another group nests it as one block: `G[A B] H[C D]`, move G into H at 1 →
+- [x] Moving all children out of a group removes the group: `A G[B C] D`, move B,C to root 4 → `A D B C`.
+- [x] Moving out of a nested group dissolves only that group: `G[A H[B C]]`, move B into G at 0 → `G[B A C]`.
+- [x] Moving a group into another group nests it as one block: `G[A B] H[C D]`, move G into H at 1 →
       `H[C G[A B] D]`.
-- [ ] Moving a group into itself or into one of its descendants is a no-op.
-- [ ] Moving nodes from different parents together gathers them in document order at the target.
-- [ ] Results are normalized, ids stay unique, and inputs are not mutated (deep-frozen).
+- [x] Moving a group into itself or into one of its descendants is a no-op.
+- [x] Moving nodes from different parents together gathers them in document order at the target.
+- [x] Results are normalized, ids stay unique, and inputs are not mutated (deep-frozen).
 
 ## Edge cases
 
@@ -66,3 +66,15 @@ feature adds the tree operations. Timing comes from the structure alone and is c
 `src/core/ops.ts`, `src/core/ops.group.test.ts`.
 
 ## Notes (added during review/doc step)
+
+- Signature: `group(track, ids, nextId: IdGen)`. The id generator is a third parameter, as PLAN.md §2.2 needs
+  for deterministic ids. `nextId` is called only when a group is really created.
+- In `ops.ts`, the model's `group` constructor is imported as `makeGroup` because the op has the same name.
+  Callers that need both should alias one of them.
+- Moving into or out of groups needed no new code. `move` (02) plus `normalize` covers every case in this doc,
+  so those tests pass since 02 and pin the group semantics.
+- Extension to PLAN.md: selecting every child of a non-root group is a no-op (see Behaviour). Grouping a group
+  together with one of its descendants is a no-op too, because they have different parents.
+- Review: a temporary randomized check (3000 random trees, never committed) ran `move`, `group`, `ungroup` and
+  `remove`. It confirmed that results stay normalized, ids stay unique, squares are never lost or duplicated,
+  and frozen inputs are left untouched.
