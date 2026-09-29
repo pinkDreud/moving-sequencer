@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { group, square, type SeqNode, type Song } from '../core/model';
 import { buildTimeline } from '../core/timeline';
-import { secondsPerSlot } from '../core/timing';
+import { secondsPerSlot, warp } from '../core/timing';
 import { FakeEngine } from './engine';
 import { createScheduler, type SchedulerOptions, type Timer } from './scheduler';
 
@@ -381,5 +381,123 @@ describe('tempo factor', () => {
     t.runUntil(0.6);
     // From slot 1.4 on, slots last 0.125 s: c (slot 2) at 0.4 + 0.6·0.125, d one slot later.
     expect(t.events().slice(0, 4)).toEqual(['a@0.050', 'b@0.300', 'c@0.475', 'd@0.600']);
+  });
+});
+
+describe('swing', () => {
+  it('delays every second slot: long/short gaps, the loop length unchanged', () => {
+    const s = setup([a, b, c, d]);
+    s.edit({ swing: 0.5 });
+    s.scheduler.start();
+    s.runUntil(1.4);
+    // Warped slots 0, 1.5, 2, 3.5, then the next loop at 4 (0.25 s per slot).
+    expect(s.events()).toEqual(['a@0.050', 'b@0.425', 'c@0.550', 'd@0.925', 'a@1.050', 'b@1.425']);
+  });
+
+  it('swings groups along with their slot', () => {
+    const s = setup([group('g', [a, b]), c]);
+    s.edit({ swing: 0.6 });
+    s.scheduler.start();
+    s.runUntil(0.5);
+    // b halfway through the stretched first slot (warped 0.8), c at 1.6, next loop at 2.
+    expect(s.events()).toEqual(['a@0.050', 'b@0.250', 'c@0.450', 'a@0.550']);
+  });
+
+  it('leaves the last slot of an odd-length pattern unswung', () => {
+    const s = setup([a, b, c]);
+    s.edit({ swing: 0.5 });
+    s.scheduler.start();
+    s.runUntil(1.3);
+    expect(s.events()).toEqual(['a@0.050', 'b@0.425', 'c@0.550', 'a@0.800', 'b@1.175', 'c@1.300']);
+  });
+
+  it('wraps several times within one tick when the lookahead spans several loops', () => {
+    const s = setup([a, b], { lookahead: 2 });
+    s.edit({ swing: 0.5 });
+    s.scheduler.start();
+    expect(s.events()).toEqual([
+      'a@0.050',
+      'b@0.425',
+      'a@0.550',
+      'b@0.925',
+      'a@1.050',
+      'b@1.425',
+      'a@1.550',
+      'b@1.925',
+    ]);
+  });
+
+  const nodes = [a, group('g', [b, c, d]), group('h', [a, group('i', [b, square('x', null), c])]), d];
+
+  it.each([
+    [0.025, 0.5],
+    [0.0137, 0.5],
+    [0.1, 1 / 3],
+    [0.1 / 3, 1 / 3],
+    [0.07, 0.75],
+    [0.0999, 0.75],
+    [0.0137, 0.01],
+  ])('schedules every note exactly once at its warped time (step %s s, swing %s)', (step, swing) => {
+    const s = setup(nodes);
+    s.edit({ bpm: 100, slotValue: 16, swing });
+    s.scheduler.start();
+    s.runUntil(5, step);
+    const tl = buildTimeline({ id: 't', nodes });
+    const sps = secondsPerSlot(100, 16);
+    const truth: { soundId: string; when: number }[] = [];
+    for (let loop = 0; 0.05 + loop * tl.length * sps < 5; loop++)
+      for (const leaf of tl.leaves)
+        if (leaf.audible && leaf.soundId !== null)
+          truth.push({
+            soundId: leaf.soundId,
+            when: 0.05 + (loop * tl.length + warp(leaf.start, swing, tl.length)) * sps,
+          });
+    const heard = s.engine.log.filter((e) => e.when < 5);
+    const expected = truth.filter((e) => e.when < 5);
+    expect(heard.map((e) => e.soundId)).toEqual(expected.map((e) => e.soundId));
+    heard.forEach((e, i) => expect(Math.abs(e.when - (expected[i]?.when ?? NaN))).toBeLessThan(1e-9));
+  });
+
+  it('drops late events and keeps following time', () => {
+    const s = setup([a, b, c, d]);
+    s.edit({ swing: 0.5 });
+    s.scheduler.start();
+    s.runUntil(0.2); // scheduled up to 0.3 s = warped slot 1, before b (1.5)
+    s.tickAt(1); // warped slot 3.8 = slot 3.6: b, c and d are all late
+    expect(s.events()).toEqual(['a@0.050', 'a@1.050']);
+    expect(s.scheduler.positionAt(1)).toBeCloseTo(3.6, 9);
+  });
+
+  it('positionAt returns the unwarped position, so the playhead follows the swung notes', () => {
+    const s = setup([a, b, c, d]);
+    s.edit({ swing: 0.5 });
+    s.scheduler.start();
+    s.runUntil(1.2);
+    expect(s.scheduler.positionAt(0.05 + 0.75 * 0.25)).toBeCloseTo(0.5, 9);
+    expect(s.scheduler.positionAt(0.425)).toBeCloseTo(1, 9);
+    expect(s.scheduler.positionAt(0.05 + 1.75 * 0.25)).toBeCloseTo(1.5, 9);
+    expect(s.scheduler.positionAt(0.05 + 3.75 * 0.25)).toBeCloseTo(3.5, 9);
+    expect(s.scheduler.positionAt(1.05 + 1.5 * 0.25)).toBeCloseTo(1, 9);
+  });
+
+  it('turning swing on mid-pair moves the offbeat not yet scheduled, without repeating or skipping', () => {
+    const s = setup([a, b, c, d]);
+    s.scheduler.start();
+    s.runUntil(0.1); // scheduled up to 0.2 s = slot 0.6
+    s.edit({ swing: 0.5 });
+    s.runUntil(1.2);
+    // From slot 0.6 (warped 0.9) at 0.2 s: b at warped 1.5, c at 2, d at 3.5, then the next loop.
+    expect(s.events()).toEqual(['a@0.050', 'b@0.350', 'c@0.475', 'd@0.850', 'a@0.975']);
+  });
+
+  it('a swing change applies from the cursor, leaving scheduled events where they are', () => {
+    const s = setup([a, b, c, d]);
+    s.edit({ swing: 0.5 });
+    s.scheduler.start();
+    s.runUntil(0.35); // scheduled up to 0.45 s = warped 1.6 = slot 1.2: a and b queued
+    s.edit({ swing: 0 });
+    s.runUntil(1.2);
+    // Straight from slot 1.2 at 0.45 s: c at slot 2 (0.8 slot later), d one slot after it.
+    expect(s.events()).toEqual(['a@0.050', 'b@0.425', 'c@0.650', 'd@0.900', 'a@1.150']);
   });
 });

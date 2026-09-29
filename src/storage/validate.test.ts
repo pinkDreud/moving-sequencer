@@ -137,6 +137,32 @@ describe('parseSong tempo factor', () => {
   });
 });
 
+describe('parseSong swing', () => {
+  it('accepts swing from 0 to 0.75', () => {
+    for (const v of [0, 0.01, 0.33, 0.5, 0.75]) expect(parseSong(tweak((s) => (s.swing = v)))?.swing).toBe(v);
+  });
+
+  it('leaves a missing swing missing (older saves: it means straight)', () => {
+    expect(parseSong(valid())).not.toHaveProperty('swing');
+  });
+
+  it('keeps the tempo factor alongside swing', () => {
+    const song = parseSong(
+      tweak((s) => {
+        s.swing = 0.5;
+        s.tempoFactor = 2;
+      }),
+    );
+    expect(song?.swing).toBe(0.5);
+    expect(song?.tempoFactor).toBe(2);
+  });
+
+  it('rejects swing out of range or not a number', () => {
+    for (const v of [-0.01, 0.76, 1, NaN, Infinity, '0.5', null])
+      expect(parseSong(tweak((s) => (s.swing = v)))).toBeNull();
+  });
+});
+
 describe('parseRecordingRecord', () => {
   const record = () => ({
     sound: { id: 'rec-a', name: 'Rec 1', color: '#fff', source: 'recording' },

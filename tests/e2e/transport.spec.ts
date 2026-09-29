@@ -75,6 +75,7 @@ test('transport controls are touch-sized and fit a 360 px wide screen', async ({
     page.getByRole('button', { name: 'Play' }),
     page.getByRole('spinbutton', { name: 'BPM' }),
     page.getByRole('combobox', { name: 'Slot value' }),
+    page.getByRole('slider', { name: 'Swing' }),
   ];
   for (const control of controls) {
     const box = await control.boundingBox();
@@ -101,4 +102,30 @@ test('2× speed halves the gap between scheduled notes', async ({ page }) => {
   await page.waitForTimeout(300);
   const fast = await gap();
   expect(fast).toBeCloseTo(normal / 2, 2);
+});
+
+test('swing makes the gaps between notes alternate long/short; at 0 they are equal', async ({ page }) => {
+  const gaps = async () => {
+    await page.evaluate(() => (window.__seqTest!.engine.log.length = 0));
+    await expect
+      .poll(() => page.evaluate(() => window.__seqTest!.engine.log.length))
+      .toBeGreaterThanOrEqual(5);
+    const when = await page.evaluate(() => window.__seqTest!.engine.log.map((e) => e.when));
+    return [0, 1, 2, 3].map((i) => when[i + 1]! - when[i]!);
+  };
+  await page.getByRole('button', { name: 'Play' }).click();
+  const straight = await gaps();
+  for (const gap of straight) expect(gap).toBeCloseTo(straight[0]!, 3);
+
+  const swing = page.getByRole('slider', { name: 'Swing' });
+  await swing.fill('50');
+  await expect(page.getByText('50 %')).toBeVisible();
+  expect(await page.evaluate(() => window.__seqTest!.app.song.swing)).toBe(0.5);
+  await page.waitForTimeout(300);
+  const [g0, g1, g2, g3] = await gaps();
+  // Offbeat delayed by half a slot: 1.5 and 0.5 slots, in either order depending on where the log starts.
+  expect(Math.max(g0!, g1!) / Math.min(g0!, g1!)).toBeCloseTo(3, 2);
+  expect(g0! + g1!).toBeCloseTo(2 * straight[0]!, 3);
+  expect(g2!).toBeCloseTo(g0!, 3);
+  expect(g3!).toBeCloseTo(g1!, 3);
 });

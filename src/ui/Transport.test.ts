@@ -124,6 +124,41 @@ describe('slot value selector', () => {
   });
 });
 
+describe('swing slider', () => {
+  const slider = () => screen.getByRole('slider', { name: 'Swing' }) as HTMLInputElement;
+
+  it('goes from 0 to 75 % in steps of 1 and starts straight', () => {
+    setup();
+    expect(slider().type).toBe('range');
+    expect([slider().min, slider().max, slider().step, slider().value]).toEqual(['0', '75', '1', '0']);
+    expect(screen.getByText('0 %')).toBeInTheDocument();
+    expect(slider()).toHaveAttribute('aria-valuetext', '0 %');
+  });
+
+  it('sets swing live while dragging and shows the value', async () => {
+    const s = setup();
+    await fireEvent.input(slider(), { target: { value: '33' } });
+    expect(s.app.song.swing).toBe(0.33);
+    expect(screen.getByText('33 %')).toBeInTheDocument();
+    expect(slider()).toHaveAttribute('aria-valuetext', '33 %');
+  });
+
+  it('follows swing changes made elsewhere', () => {
+    const s = setup();
+    s.app.setSwing(0.5);
+    flushSync();
+    expect(slider().value).toBe('50');
+    expect(screen.getByText('50 %')).toBeInTheDocument();
+  });
+
+  it('lets Space toggle play/stop while the slider has focus (it has no use for Space)', async () => {
+    const s = setup();
+    slider().focus();
+    await pressSpace(slider());
+    expect(s.app.playing).toBe(true);
+  });
+});
+
 describe('Space', () => {
   it('offers ½×, 1× and 2× speed with 1× checked, and sets the factor', async () => {
     const { app } = setup();
