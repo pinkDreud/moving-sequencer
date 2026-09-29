@@ -13,8 +13,8 @@ Each feature has a doc `NN-slug.md` using the template below. Status: `planned` 
 | 06  | [Audio engine + kit + transport](06-audio-transport.md) | done    |
 | 07  | [Strip UI](07-strip-ui.md)                              | done    |
 | 08  | [Drag & drop](08-drag-drop.md)                          | done    |
-| 09  | Mic recording                                           | planned |
-| 10  | Autosave                                                | planned |
+| 09  | [Mic recording](09-mic-recording.md)                    | planned |
+| 10  | [Autosave](10-autosave.md)                              | planned |
 | 11  | PWA                                                     | planned |
 
 ## Template
