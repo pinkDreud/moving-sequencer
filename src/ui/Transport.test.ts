@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { flushSync } from 'svelte';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { FakeEngine } from '../audio/engine';
 import type { Timer } from '../audio/scheduler';
 import { createTransport, type FrameLoop } from '../audio/transport';
@@ -10,6 +10,9 @@ import Transport from './Transport.svelte';
 
 const noTimer: Timer = { setInterval: () => 0, clearInterval: () => {} };
 const noFrames: FrameLoop = { request: () => 0, cancel: () => {} };
+
+// Vitest globals are off, so Testing Library cannot register its automatic cleanup.
+afterEach(() => cleanup());
 
 function setup() {
   const nextId = createIdGen('n');

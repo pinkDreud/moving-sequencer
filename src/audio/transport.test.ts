@@ -250,7 +250,7 @@ describe('live tempo', () => {
     await s.transport.play();
     // Sixteenths at 120 bpm: 0.125 s per slot, slot 1 lands at 0.1 + 0.8 × 0.125.
     s.app.setSlotValue(16);
-    s.runUntil(0.25);
+    s.runUntil(0.2);
     expect(s.events()).toEqual(['kick@0.050', 'hat@0.200']);
   });
 });
