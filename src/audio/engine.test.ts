@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FakeEngine, RealtimeFakeEngine, WebAudioEngine } from './engine';
+import { FakeEngine, RealtimeFakeEngine, unlockOnGesture, WebAudioEngine } from './engine';
 
 describe('FakeEngine', () => {
   it('has a manual clock that can be set and advanced', () => {
@@ -162,5 +162,55 @@ describe('WebAudioEngine', () => {
     expect(context.state).toBe('running');
     await engine.unlock();
     expect(context.resumes).toBe(1);
+  });
+});
+
+describe('unlockOnGesture', () => {
+  /** Lets the resume promise and its handlers settle. */
+  const settle = () => new Promise((resolve) => setTimeout(resolve));
+
+  it('retries on every pointerdown/pointerup/keydown until the context runs, then stops listening', async () => {
+    const { context, engine } = webEngine();
+    let accepted = false;
+    // A browser refuses resume() outside what it counts as a gesture (iOS: pointerdown from touch).
+    context.resume = () => {
+      context.resumes++;
+      if (!accepted) return Promise.reject(new Error('NotAllowedError'));
+      context.state = 'running';
+      return Promise.resolve();
+    };
+    const target = new EventTarget();
+    unlockOnGesture(engine, target);
+
+    target.dispatchEvent(new Event('pointerdown'));
+    await settle();
+    expect(context.resumes).toBe(1);
+    expect(context.state).toBe('suspended');
+
+    accepted = true;
+    target.dispatchEvent(new Event('pointerup'));
+    await settle();
+    expect(context.resumes).toBe(2);
+    expect(context.state).toBe('running');
+
+    context.state = 'suspended';
+    target.dispatchEvent(new Event('keydown'));
+    await settle();
+    expect(context.resumes).toBe(2);
+  });
+
+  it('keeps listening when resume() settles but the context is still not running', async () => {
+    const { context, engine } = webEngine();
+    context.resume = () => {
+      context.resumes++;
+      return Promise.resolve();
+    };
+    const target = new EventTarget();
+    unlockOnGesture(engine, target);
+    target.dispatchEvent(new Event('pointerdown'));
+    await settle();
+    target.dispatchEvent(new Event('keydown'));
+    await settle();
+    expect(context.resumes).toBe(2);
   });
 });
