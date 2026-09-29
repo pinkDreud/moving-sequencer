@@ -1,7 +1,7 @@
-// Test-only helpers for the recording UI. Not imported by app code.
+// Test-only helpers for the record control. Not imported by app code.
 import { vi, type Mock } from 'vitest';
-import type { MicAvailability, Recording } from '../audio/recorder';
-import type { SoundId } from '../core/model';
+import type { MicAvailability, Recording } from './audio/recorder';
+import type { SoundId } from './core/model';
 import { RecordControl, type RecordControlDeps } from './recordControl.svelte';
 
 /** A `RecordControl` on fakes: a manual clock and interval, and recordings/saves the test settles by hand. */

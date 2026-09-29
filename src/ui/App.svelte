@@ -3,7 +3,7 @@
   import Transport from './Transport.svelte';
   import type { AppState } from '../state.svelte';
   import Editor from './Editor.svelte';
-  import type { RecordControl } from './recordControl.svelte';
+  import type { RecordControl } from '../recordControl.svelte';
 
   // `transport` and `recording` are optional so the shell can render without audio (component tests).
   let {

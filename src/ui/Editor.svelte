@@ -3,7 +3,7 @@
   import type { AppState } from '../state.svelte';
   import { pickSound, runShortcut } from './actions';
   import Palette from './Palette.svelte';
-  import type { RecordControl } from './recordControl.svelte';
+  import type { RecordControl } from '../recordControl.svelte';
   import SelectionBar from './SelectionBar.svelte';
   import { shortcutFor } from './shortcuts';
   import Strip from './Strip.svelte';

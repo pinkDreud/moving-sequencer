@@ -11,7 +11,7 @@ import { browserMic, decodeRecording, micAvailability, startRecording } from './
 import { createRecordings } from './audio/recordings';
 import { createTransport, type Transport } from './audio/transport';
 import App from './ui/App.svelte';
-import { RecordControl } from './ui/recordControl.svelte';
+import { RecordControl } from './recordControl.svelte';
 import { AppState, defaultSong, randomIdGen } from './state.svelte';
 import './ui/global.css';
 

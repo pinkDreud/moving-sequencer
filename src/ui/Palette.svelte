@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Sound, SoundId } from '../core/model';
-  import type { RecordControl } from './recordControl.svelte';
+  import type { RecordControl } from '../recordControl.svelte';
 
   let {
     sounds,

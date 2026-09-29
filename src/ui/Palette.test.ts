@@ -4,7 +4,7 @@ import { MicError } from '../audio/recorder';
 import { KIT } from '../audio/sounds';
 import type { Sound, SoundId } from '../core/model';
 import Palette from './Palette.svelte';
-import { fakeRecordDeps } from './record-test-helpers';
+import { fakeRecordDeps } from '../record-test-helpers';
 
 describe('Palette', () => {
   it('shows one button per sound plus "Silent"', () => {

@@ -4,8 +4,8 @@ import {
   type MicAvailability,
   type MicErrorReason,
   type Recording,
-} from '../audio/recorder';
-import type { SoundId } from '../core/model';
+} from './audio/recorder';
+import type { SoundId } from './core/model';
 
 export type RecordStatus = 'idle' | 'starting' | 'recording' | 'processing';
 

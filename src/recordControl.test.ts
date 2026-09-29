@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MicError, type Recording } from '../audio/recorder';
+import { MicError, type Recording } from './audio/recorder';
 import { RecordControl, type RecordControlDeps } from './recordControl.svelte';
 import { fakeRecordDeps } from './record-test-helpers';
 
