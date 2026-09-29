@@ -52,6 +52,7 @@ export function createScheduler({
 }: SchedulerOptions): Scheduler {
   let playing = false;
   let handle: unknown;
+  /** Audio time of the first event since start or since the pattern stopped being empty. */
   let startTime = 0;
   /** Slot position scheduled up to, and the audio time it corresponds to. */
   let cursor = 0;
@@ -79,7 +80,7 @@ export function createScheduler({
     const state = playable();
     if (!state) {
       cursor = 0;
-      cursorTime = Math.max(cursorTime, horizon);
+      cursorTime = startTime = Math.max(cursorTime, horizon);
       return;
     }
     const { timeline, sps } = state;
