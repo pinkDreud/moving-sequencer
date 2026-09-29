@@ -4,7 +4,7 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Current state
 
-- **Phase:** features 00–14 are done and live (691 unit, 197 e2e tests). All requests from the first feedback round are shipped.
+- **Phase:** features 00–15 are done and live (709 unit, 199 e2e tests).
 - **Next step:** user feedback on real devices (swing by ear, prep drag on a phone). Open ideas: auto-scroll while
   dragging on phones, undo/redo, multi-track, branch protection on `main`.
   `feat/14-prep-area`).
@@ -26,6 +26,11 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-29 — 15 editing keys (user feedback in Italian)
+
+- Delete empties instead of removing (Shift+Delete / Remove still removes), Ins or I inserts an empty slot before
+  the selection, and Shift+click selects a range (Ctrl/Cmd toggles). Spec: `docs/features/15-editing-keys.md`.
 
 ### 2026-09-29 — 14 preparation area merged
 
