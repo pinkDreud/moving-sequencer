@@ -4,9 +4,11 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Current state
 
-- **Phase:** 00 scaffold, in progress
-- **Next step:** finish scaffold (tooling, CI, Pages), then 01 basic ops ∥ 04 timeline
-- **Blockers:** none
+- **Phase:** 00 scaffold done. Two parallel tracks are running:
+  - track A: 01 basic ops → 02 move → 03 groups (`src/core/ops.ts`), worktree agent
+  - track B: 04 timeline + timing → 05 scheduler (`src/core/timeline.ts`, `src/audio/scheduler.ts`), worktree agent
+- **Next step:** review and merge tracks A and B, then 06 audio engine ∥ 07 strip UI
+- **Blockers:** GitHub Pages must be enabled once by hand: repo Settings → Pages → Source = "GitHub Actions".
 
 ## Documentation index
 
@@ -20,7 +22,14 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Entries
 
-### 2026-09-29
+### 2026-09-29 — scaffold
+
+- Tooling: Vite 8, Svelte 5, TS 6 strict, Vitest 5 + Testing Library, Playwright (4 projects), ESLint 10 + Prettier.
+- CI (`.github/workflows/ci.yml`) + Pages deploy after green CI (`deploy.yml`).
+- `src/core/model.ts`: shared types and constructors, so the ops and timeline tracks can run in parallel.
+- Gotcha: a component needs a `<script lang="ts">` block or svelte-check can't type its import.
+
+### 2026-09-29 — planning
 
 - Requirements gathered through Q&A; decisions recorded in `docs/PLAN.md` §1.
 - Wrote `docs/PLAN.md`, `AGENTS.md`, `CLAUDE.md`, this log.
