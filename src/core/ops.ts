@@ -1,4 +1,12 @@
-import type { NodeId, SeqNode, SoundId, Square, Track } from './model';
+import {
+  group as makeGroup,
+  type IdGen,
+  type NodeId,
+  type SeqNode,
+  type SoundId,
+  type Square,
+  type Track,
+} from './model';
 
 /** Where to put nodes: `parentId: null` = track root; `index` = position among the parent's current children. */
 export interface DropTarget {
@@ -183,4 +191,50 @@ export function move(track: Track, ids: readonly NodeId[], target: DropTarget): 
   const rest = without(track, new Set(nodes.map((n) => n.id)));
   const out = updateChildren(rest, parentId, (children) => spliceIn(children, adjusted, nodes));
   return out ? normalize(out) : track;
+}
+
+/**
+ * Wraps ≥ 2 siblings into a new group (id from `nextId`) at the first one's position, children in document
+ * order. Otherwise — or when they are every child of a group — returns the track unchanged and `groupId: null`.
+ */
+export function group(
+  track: Track,
+  ids: readonly NodeId[],
+  nextId: IdGen,
+): { track: Track; groupId: NodeId | null } {
+  const selected = new Set(ids);
+  const entries = walk(track.nodes, null).filter((e) => selected.has(e.node.id));
+  const [first] = entries;
+  if (!first || entries.length < 2 || entries.some((e) => e.parentId !== first.parentId)) {
+    return { track, groupId: null };
+  }
+  const { parentId } = first;
+  // Wrapping all children of a group would create a single-child group that normalize dissolves again.
+  const parent = parentId === null ? undefined : findNode(track, parentId);
+  if (parent?.kind === 'group' && parent.children.length === entries.length) return { track, groupId: null };
+
+  const groupId = nextId();
+  const wrapper = makeGroup(
+    groupId,
+    entries.map((e) => e.node),
+  );
+  // Entries share a parent and come in index order, so nothing before `first.index` is removed.
+  const out = updateChildren(track, parentId, (children) =>
+    spliceIn(
+      children.filter((c) => !selected.has(c.id)),
+      first.index,
+      [wrapper],
+    ),
+  );
+  return out ? { track: normalize(out), groupId } : { track, groupId: null };
+}
+
+/** Replaces a group by its children, in place inside its parent. */
+export function ungroup(track: Track, groupId: NodeId): Track {
+  return normalize(
+    withNodes(
+      track,
+      rewrite(track.nodes, (n) => (n.kind === 'group' && n.id === groupId ? n.children : [n])),
+    ),
+  );
 }
