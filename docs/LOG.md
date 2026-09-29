@@ -25,6 +25,12 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Entries
 
+### 2026-09-29 — issue #1: palette tap replaces the selected sound
+
+- First external issue (MaKiGiO, in Italian): selecting a square and tapping a sample put the sound in the next
+  square. The palette now sets the sound of the selection; with no selection it appends. The Sound button is gone.
+  The fix commit says "Fixes #1"; the owner asked for a reply in Italian before closing.
+
 ### 2026-09-29 — user-reported group bugs fixed
 
 - Group with a square inside a group plus another square nested a new group (or did nothing). Group now joins the

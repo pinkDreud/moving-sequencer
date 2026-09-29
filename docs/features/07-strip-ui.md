@@ -102,3 +102,11 @@ Drag & drop (08), lasso (08).
 `src/ui/actions.ts` (selection actions on `AppState`), `src/ui/shortcuts.ts`, component/unit tests,
 `tests/e2e/edit.spec.ts`. `Editor.svelte` holds the pieces together (sound mode, keyboard) so `App.svelte`
 only mounts it.
+
+## Update 2026-09-29: palette tap replaces (issue #1)
+
+Issue #1 (MaKiGiO): "I click a square, then a sample, and the sound appears in the next square." Palette taps with a
+selection inserted after it, and replacing needed the "Sound" button first. That surprised two people (it also caused
+the owner's nested-group report). Now a palette tap with a selection sets the sound of the selected squares (and of
+all squares in selected groups); with nothing selected it appends. The Sound button, the armed palette and
+`insertTarget` are removed. To put a new square in a specific place: append it, then drag it.
