@@ -91,6 +91,13 @@ describe('leafAt', () => {
     expect(at(1 + 2 / 3 - 1e-12)).toBe('d');
   });
 
+  it('returns undefined inside a slot that has no leaf (empty group, invalid but tolerated)', () => {
+    const holey = buildTimeline(track([square('a', 'k'), group('g', []), square('b', 'k')]));
+    expect(holey.length).toBe(3);
+    expect(leafAt(holey, 1.5)).toBeUndefined();
+    expect(leafAt(holey, 2)?.nodeId).toBe('b');
+  });
+
   it('returns undefined outside [0, length) and for an empty timeline', () => {
     expect(at(-0.5)).toBeUndefined();
     expect(at(2)).toBeUndefined();
