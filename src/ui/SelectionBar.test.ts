@@ -72,6 +72,6 @@ describe('SelectionBar', () => {
 
   it('has no Sound button: a palette tap sets the sound of the selection directly', () => {
     render(SelectionBar, { app: makeApp('A B', ['A']) });
-    expect(screen.queryByRole('button', { name: 'Sound', exact: true })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Sound' })).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 // Pure selection helpers used by the strip, the palette and the selection bar.
 import type { NodeId, SeqNode, Square, Track } from '../core/model';
-import { findLocation, findNode, groupOrJoin, nodeIds, ungroup, type DropTarget } from '../core/ops';
+import { findNode, groupOrJoin, nodeIds, ungroup } from '../core/ops';
 
 export type SelectMode = 'replace' | 'toggle';
 
@@ -15,15 +15,6 @@ export interface PointerLike {
 export function selectMode(e: PointerLike): SelectMode {
   const tap = e.pointerType === 'touch' || e.pointerType === 'pen';
   return tap || e.shiftKey || e.metaKey || e.ctrlKey ? 'toggle' : 'replace';
-}
-
-/** Where a palette square goes: after the last selected node in document order, else at the end of the root. */
-export function insertTarget(track: Track, selection: ReadonlySet<NodeId>): DropTarget {
-  const last = nodeIds(track)
-    .filter((id) => selection.has(id))
-    .at(-1);
-  const at = last === undefined ? undefined : findLocation(track, last);
-  return at ? { parentId: at.parentId, index: at.index + 1 } : { parentId: null, index: track.nodes.length };
 }
 
 /** True when the Group button would create or join a group with this selection. */

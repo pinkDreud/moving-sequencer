@@ -3,14 +3,7 @@
   import { deleteSelection, groupSelection, toggleMuteSelection, ungroupSelection } from './actions';
   import { allMuted, canGroup, selectedGroupIds } from './selection';
 
-  let {
-    app,
-    soundMode = $bindable(false),
-  }: {
-    app: AppState;
-    /** Armed by "Sound": the next palette pick sets the sound of the selection. */
-    soundMode?: boolean;
-  } = $props();
+  let { app }: { app: AppState } = $props();
 
   const muted = $derived(allMuted(app.track, app.selection));
   const groupable = $derived(canGroup(app.track, app.selection));
@@ -21,7 +14,6 @@
   <div class="bar" role="toolbar" aria-label="Selection">
     <span class="count">{app.selection.size} selected</span>
     <button type="button" onclick={() => toggleMuteSelection(app)}>{muted ? 'Unmute' : 'Mute'}</button>
-    <button type="button" aria-pressed={soundMode} onclick={() => (soundMode = !soundMode)}>Sound</button>
     <button type="button" disabled={!groupable} onclick={() => groupSelection(app)}>Group</button>
     <button type="button" disabled={!hasGroup} onclick={() => ungroupSelection(app)}>Ungroup</button>
     <button type="button" class="danger" onclick={() => deleteSelection(app)}>Delete</button>
@@ -70,11 +62,6 @@
   button:disabled {
     opacity: 0.4;
     cursor: default;
-  }
-
-  button[aria-pressed='true'] {
-    border-color: var(--accent);
-    color: var(--accent);
   }
 
   .danger {
