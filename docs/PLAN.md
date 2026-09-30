@@ -163,7 +163,8 @@ Classic Web Audio lookahead scheduler ("A Tale of Two Clocks").
   `cursor` to the horizon `now + lookahead`, crossing loop boundaries, calling `engine.play` for every audible
   leaf whose `start ∈ [cursor, windowEnd)` (epsilon 1e-9). Tempo changes apply from the current cursor.
 - Empty pattern: advance `cursorTime` to the horizon, schedule nothing, keep `cursor = 0`.
-- `positionAt(time) = (cursor − (cursorTime − time) / sps) mod length` → used by UI for the playhead.
+- `positionAt(time, trackIndex = 0) = (cursor − (cursorTime − time) / sps) mod length` → used by UI for the
+  playhead (of the track shown).
 - `stop()`: clear timer, `engine.stopAll()`.
 - Semantics consequence: events already scheduled within the lookahead (≤ 100 ms) are not retracted.
 - Several tracks (feature 17): the master and `'slot'` tracks each keep their own cursor; `'loop'` tracks are
@@ -183,6 +184,8 @@ Classic Web Audio lookahead scheduler ("A Tale of Two Clocks").
 - **Strip**: top-level slots in a wrapping flex row. Every slot has the same width (time ∝ width).
   A group renders inside one slot, children side by side with equal width (nested groups recurse).
   At least 8 slots per row: squares are 56 px and shrink on narrow screens (≈ 34 px at 360 px, see feature 16).
+- **Track tabs** (`TrackTabs.svelte`, feature 17): one tab per track plus `+`; the strip shows the selected tab's
+  track. A track other than the master has a Sync choice (Same slots / Same loop) and Remove track.
 - **Playhead**: `requestAnimationFrame` → `scheduler.positionAt(engine.now())` → highlight the leaf containing it.
 - **Palette**: one button per sound + "silent"; tap appends a square (or inserts after selection).
 - **Transport**: play/stop, BPM (numeric + slider, 30–300), slot value (1/4, 1/8, 1/16).
@@ -219,6 +222,8 @@ Autosave debounced 500 ms after each change; restore on load; fallback to a defa
 | 09  | Mic recording                                                  | 06         | 08                  |
 | 10  | Autosave (IndexedDB)                                           | 07         | 09                  |
 | 11  | PWA: manifest, installable, offline                            | 10         | —                   |
+
+Features 12–17 were added after v1 from user feedback; the full list with status is in `docs/features/README.md`.
 
 Parallel work: run independent features in separate git worktrees (one agent each), merge sequentially.
 

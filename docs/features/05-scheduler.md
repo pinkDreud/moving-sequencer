@@ -61,6 +61,7 @@ a square.
 
 - The real `WebAudioEngine` and kit (feature 06), UI playhead rendering (07).
 - Multiple tracks: only `song.tracks[0]` is scheduled (each track would need its own cursor).
+  **Superseded by feature 17**: all tracks are scheduled, see `17-multi-track.md`.
 - Swing, per-square volume.
 
 ## Files
@@ -82,7 +83,7 @@ a square.
   loop anyway. Shifting both bounds by the same −ε keeps that partition and puts a leaf that is within float
   error of a boundary in the next window. The lower bound also covers float-late ticks. Mutation-checked:
   removing one of the two epsilons fails 19 tests; removing both fails the float-late test.
-- The timeline is memoized by `song.tracks[0]` identity. If the state layer (07) hands out a new track object on
+- The timeline is memoized by `song.tracks[0]` identity (since feature 17: per track object, in a `WeakMap`). If the state layer (07) hands out a new track object on
   every read (e.g. `$state.snapshot`), the timeline is rebuilt every tick. That is correct but wasteful.
 - `FakeEngine` counts `stopAll` calls but keeps its `log`. Assertions see everything that was handed to the engine.
 - Vitest gotcha: a function returned from `beforeEach` runs as teardown. `beforeEach(() => spy.mockClear())`

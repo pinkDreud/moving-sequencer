@@ -57,7 +57,8 @@ start/stop the loop and change BPM and slot value, and changes are heard immedia
 ## Notes from 05
 
 - Resume the `AudioContext` **before** `scheduler.start()`: a suspended context's clock does not move.
-- The scheduler only plays `song.tracks[0]` and reads the song fresh on every tick.
+- The scheduler only plays `song.tracks[0]` and reads the song fresh on every tick. (Since feature 17 it plays
+  every track, and the playhead follows the track of the selected tab.)
 
 ## Out of scope
 
