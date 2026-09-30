@@ -4,6 +4,7 @@ import {
   group,
   square,
   TEMPO_FACTORS,
+  TRACK_SYNCS,
   type SeqNode,
   type SlotValue,
   type Song,
@@ -74,7 +75,10 @@ function parseTrack(value: unknown, ids: Set<string>): Track {
   const id = str(value.id);
   claim(id, ids);
   const nodes = each(value.nodes, (node) => parseNode(node, ids, 0));
-  return normalize({ id, nodes });
+  const sync = TRACK_SYNCS.find((s) => s === value.sync);
+  if (value.sync !== undefined && sync === undefined) fail();
+  // A missing sync stays missing, so older saves round-trip unchanged.
+  return normalize(sync === undefined ? { id, nodes } : { id, nodes, sync });
 }
 
 /** A stored song as a clean, normalized `Song`, or null if it is not a valid version-1 song. */

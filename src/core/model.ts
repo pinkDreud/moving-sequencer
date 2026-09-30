@@ -19,9 +19,18 @@ export interface Group {
 
 export type SeqNode = Square | Group;
 
+/**
+ * What a track shares with the master (the first track): `slot` = the duration of one slot, so it loops at its
+ * own length; `loop` = the duration of the whole loop, so its slots stretch to fit.
+ */
+export type TrackSync = 'slot' | 'loop';
+export const TRACK_SYNCS: readonly TrackSync[] = ['slot', 'loop'];
+
 export interface Track {
   id: string;
   nodes: SeqNode[];
+  /** Missing means `slot` (tracks saved before there were several). Ignored on the master. */
+  sync?: TrackSync;
 }
 
 /** Note value of one top-level slot: 4 = quarter, 8 = eighth, 16 = sixteenth. */
