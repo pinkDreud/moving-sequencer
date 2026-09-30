@@ -1,7 +1,7 @@
 # 17 — Multiple tracks
 
-Status: done (on the branch, not merged)
-Branch: feat/17-multi-track (not merged: the user wants to try it before it goes to `main`, which deploys)
+Status: done
+Branch: feat/17-multi-track
 
 ## Behaviour (user request, 2026-09-30)
 
