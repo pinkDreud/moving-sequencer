@@ -12,6 +12,8 @@ const tab = (name: string) => screen.getByRole('tab', { name });
 const button = (name: string) => screen.getByRole('button', { name });
 const radio = (name: string) => screen.getByRole('radio', { name });
 
+const sq = { kind: 'square', soundId: 'hat', muted: false } as const;
+
 /** A master `A B` plus one empty track per extra spec. */
 function setup(...others: string[]) {
   const app = makeApp('A B');
@@ -22,7 +24,6 @@ function setup(...others: string[]) {
   app.selectTrack(0);
   return app;
 }
-const sq = { kind: 'square', soundId: 'hat', muted: false } as const;
 
 describe('TrackTabs', () => {
   it('shows one tab per track, the master first and selected', () => {

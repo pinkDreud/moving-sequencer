@@ -6,6 +6,8 @@ import { createScheduler, type Timer } from './scheduler';
 /** What the transport reads and writes; `AppState` fits, without `audio/` depending on the state module. */
 export interface TransportState {
   readonly song: Song;
+  /** Index of the track on screen: the playhead is shown on that one. */
+  readonly activeTrack: number;
   playing: boolean;
   playheadId: NodeId | null;
 }
@@ -56,8 +58,8 @@ export function createTransport({
   }
 
   function updatePlayhead(): void {
-    const track = state.song.tracks[0];
-    const position = scheduler.positionAt(engine.now());
+    const track = state.song.tracks[state.activeTrack];
+    const position = scheduler.positionAt(engine.now(), state.activeTrack);
     const id = track && position !== null ? (leafAt(timelineOf(track), position)?.nodeId ?? null) : null;
     if (state.playheadId !== id) state.playheadId = id;
   }

@@ -18,6 +18,7 @@
   import SelectionBar from './SelectionBar.svelte';
   import { shortcutFor } from './shortcuts';
   import Strip from './Strip.svelte';
+  import TrackTabs from './TrackTabs.svelte';
 
   let { app, recording }: { app: AppState; recording?: RecordControl } = $props();
 
@@ -146,6 +147,7 @@
 />
 
 <div class="editor">
+  <TrackTabs {app} />
   <Strip {app} area="pattern" {gesture} dragging={dragged} bind:el={patternEl} />
   <Palette sounds={app.sounds} {onpick} {recording} />
   <div class="prep-area">

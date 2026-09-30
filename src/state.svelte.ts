@@ -10,6 +10,7 @@ import {
   type SoundId,
   type Track,
   type TempoFactor,
+  type TrackSync,
 } from './core/model';
 import type { Area } from './core/dropTarget';
 import { clearSound, nodeIds } from './core/ops';
@@ -17,6 +18,8 @@ import { SWING_MAX } from './core/timing';
 
 const BPM_MIN = 30;
 const BPM_MAX = 300;
+/** Tracks a song can have: what still fits as one row of tabs on a phone. */
+export const MAX_TRACKS = 8;
 
 /** First-load pattern: a simple 8-slot beat. */
 export function defaultSong(nextId: IdGen): Song {
@@ -53,6 +56,8 @@ export class AppState {
   prep: Track = $state.raw({ id: 'prep', nodes: [] });
   /** Where a palette tap with nothing selected appends: the strip tapped last. */
   activeArea: Area = $state('pattern');
+  /** Index of the track shown in the pattern strip (the selected tab). All tracks play; this one is edited. */
+  activeTrack = $state(0);
   readonly nextId: IdGen;
 
   /** `sounds` defaults to the kit; at startup it also holds the restored recordings. */
@@ -62,13 +67,52 @@ export class AppState {
     this.sounds = sounds;
   }
 
+  /** The track being edited: the one of the selected tab. */
   get track(): Track {
-    const track = this.song.tracks[0];
+    const track = this.song.tracks[this.activeTrack];
     if (!track) throw new Error('song has no track');
     return track;
   }
 
-  /** Applies a pure op to the first track; a no-op (same object back) leaves the song untouched. */
+  /** Shows another track. The selection goes: its nodes belong to the tab being left. */
+  selectTrack(index: number): void {
+    if (index === this.activeTrack || !this.song.tracks[index]) return;
+    this.activeTrack = index;
+    this.clearSelection();
+    this.anchor = null;
+  }
+
+  /** Appends an empty track (sharing the master's slot) and shows it; nothing happens at `MAX_TRACKS`. */
+  addTrack(): void {
+    const { tracks } = this.song;
+    if (tracks.length >= MAX_TRACKS) return;
+    this.song = { ...this.song, tracks: [...tracks, { id: this.nextId(), nodes: [] }] };
+    this.selectTrack(tracks.length);
+  }
+
+  /** Removes a track other than the master; the track shown stays shown unless it is the one removed. */
+  removeTrack(index: number): void {
+    const { tracks } = this.song;
+    if (index <= 0 || !tracks[index]) return;
+    const shown = this.activeTrack;
+    if (index === shown) {
+      this.clearSelection();
+      this.anchor = null;
+    }
+    // Set before the song shrinks, so `track` never points past the end.
+    this.activeTrack = index < shown ? shown - 1 : Math.min(shown, tracks.length - 2);
+    this.song = { ...this.song, tracks: tracks.filter((_, i) => i !== index) };
+  }
+
+  /** Sets what a track shares with the master: its slot or its whole loop. The master itself has no sync. */
+  setTrackSync(index: number, sync: TrackSync): void {
+    const track = this.song.tracks[index];
+    if (index <= 0 || !track || (track.sync ?? 'slot') === sync) return;
+    const tracks = this.song.tracks.map((t, i) => (i === index ? { ...t, sync } : t));
+    this.song = { ...this.song, tracks };
+  }
+
+  /** Applies a pure op to the active track; a no-op (same object back) leaves the song untouched. */
   updateTrack(update: (track: Track) => Track): void {
     this.setTracks({ pattern: update(this.track) });
   }
@@ -89,7 +133,8 @@ export class AppState {
   setTracks({ pattern, prep }: { pattern?: Track; prep?: Track }): void {
     let changed = false;
     if (pattern && pattern !== this.track) {
-      this.song = { ...this.song, tracks: [pattern, ...this.song.tracks.slice(1)] };
+      const shown = this.activeTrack;
+      this.song = { ...this.song, tracks: this.song.tracks.map((t, i) => (i === shown ? pattern : t)) };
       changed = true;
     }
     if (prep && prep !== this.prep) {
