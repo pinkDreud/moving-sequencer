@@ -88,6 +88,18 @@ describe('tracks sharing the slot', () => {
     expect(s.events(...OTHER)).toEqual(['z@0.550', 'x@0.800', 'y@1.050']);
   });
 
+  it('joins on the slot grid with swing, when the slot it lands in is swung differently', () => {
+    const master = track('m', [a, b, c, d]);
+    const s = setup([master, track('t', [])]);
+    s.edit({ swing: 0.5 });
+    s.scheduler.start();
+    s.runUntil(0.6); // scheduled up to 0.7 s: 2.6 swung slots, inside the master's stretched third slot
+    s.edit({ tracks: [master, track('t', [x, y, z])] });
+    s.runUntil(1);
+    // The track's third slot is straight (odd length), yet its loop still starts on a whole slot (3 → 0.8 s).
+    expect(s.events(...OTHER)).toEqual(['x@0.800']);
+  });
+
   it('starts a refilled master on the slot grid of the tracks still running', () => {
     const other = track('t', [x, y, z]);
     const s = setup([track('m', []), other]);

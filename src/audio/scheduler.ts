@@ -185,6 +185,7 @@ export function createScheduler({
     const free = planned?.tracks.filter(runsFree) ?? [];
     for (const id of voices.keys()) if (!free.some((track) => track.id === id)) voices.delete(id);
     if (planned) {
+      const { sps, swing } = planned;
       // A track that starts while others run joins their slot grid: it takes the place, modulo its own length,
       // of the first track already running (read before anything advances).
       const running = free.find((track) => voices.has(track.id));
@@ -196,14 +197,18 @@ export function createScheduler({
           track.id,
           joinAt
             ? {
-                cursor: (joinAt.cursor % joinAt.length) % track.timeline.length,
+                // In swung slots: whole slots are where the tracks' grids agree, whatever pair each is in.
+                cursor: unwarp(
+                  warp(joinAt.cursor % joinAt.length, swing, joinAt.length) % track.timeline.length,
+                  swing,
+                  track.timeline.length,
+                ),
                 cursorTime: joinAt.cursorTime,
                 startTime: -Infinity,
               }
             : { cursor: 0, cursorTime: frontier, startTime: frontier },
         );
       }
-      const { sps, swing } = planned;
       const master = planned.tracks[0];
       const followers = planned.tracks.filter((track) => track.follows && track.timeline.length > 0);
       for (const track of free) {

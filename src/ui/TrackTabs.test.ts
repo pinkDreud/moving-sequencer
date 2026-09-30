@@ -98,6 +98,17 @@ describe('TrackTabs', () => {
     expect(button('Remove track')).toBeInTheDocument();
     expect(app.song.tracks).toHaveLength(3);
   });
+
+  it('is not armed any more when coming back to the tab (WebKit buttons take no focus, so nothing blurs)', async () => {
+    const app = setup('', '');
+    app.selectTrack(1);
+    render(TrackTabs, { app });
+    await fireEvent.click(button('Remove track'));
+    await fireEvent.click(tab('Master'));
+    await fireEvent.click(tab('Track 2'));
+    expect(screen.queryByRole('button', { name: 'Remove?' })).toBeNull();
+    expect(button('Remove track')).toBeInTheDocument();
+  });
 });
 
 describe('Editor with several tracks', () => {

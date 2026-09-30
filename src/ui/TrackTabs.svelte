@@ -20,6 +20,12 @@
   let confirmFor: string | null = $state(null);
   const confirming = $derived(confirmFor === app.track.id);
 
+  function select(index: number): void {
+    // Not left to blur alone: WebKit buttons take no focus on click, so the Remove button never blurs there.
+    confirmFor = null;
+    app.selectTrack(index);
+  }
+
   function remove(): void {
     if (!confirming) {
       confirmFor = app.track.id;
@@ -33,12 +39,7 @@
 <div class="tracks">
   <div class="tabs" role="tablist" aria-label="Tracks">
     {#each app.song.tracks as track, i (track.id)}
-      <button
-        type="button"
-        role="tab"
-        aria-selected={i === app.activeTrack}
-        onclick={() => app.selectTrack(i)}
-      >
+      <button type="button" role="tab" aria-selected={i === app.activeTrack} onclick={() => select(i)}>
         {i === 0 ? 'Master' : `Track ${i + 1}`}
       </button>
     {/each}
@@ -70,7 +71,7 @@
           </label>
         {/each}
       </div>
-      <!-- Not undoable, so it takes two presses; moving on (blur, another tab) forgets the first. -->
+      <!-- Not undoable, so it takes two presses; moving on (blur, a tab press) forgets the first. -->
       <button
         type="button"
         class="remove"
