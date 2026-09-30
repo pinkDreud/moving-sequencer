@@ -17,7 +17,8 @@ A small web step sequencer.
 - **Grouping = nested subdivision:** a group occupies **one slot**; its N children split that slot evenly
   (group of 3 in a slot = triplet). Groups nest. Ungroup expands the children back to full slots.
   Dragging a square into/out of a group changes that group's subdivision live.
-- One track now; the data model is multi-track-ready (`Song.tracks[]`).
+- Several tracks play together, each edited in its own tab (feature 17). The first is the master; the others share
+  either its slot duration or its whole loop.
 - Must work on Mac, Windows and phones → web app (PWA), pointer events for mouse/touch/pen.
 
 ### Decisions log (from user Q&A, 2026-09-29)
@@ -37,6 +38,7 @@ A small web step sequencer.
 | Tempo ½×/2×         | a separate multiplier (½×/1×/2×), BPM unchanged, applies at once (decided 2026-09-29)                                     |
 | Swing               | pairs of slots, time-warp (groups swing along); 0–75 %                                                                    |
 | Prep area           | a second, never-played strip; drag to the pattern copies (Alt moves); not saved                                           |
+| Tracks              | tabs; all play; per track: same slot as the master (own loop length) or same loop (slots stretch) (decided 2026-09-30)    |
 | Persistence         | autosave to IndexedDB (song + recordings)                                                                                 |
 | CI/CD               | GitHub Actions (lint, typecheck, unit, e2e) + GitHub Pages deploy after green CI on `main` (repo public since 2026-09-29) |
 
@@ -87,6 +89,7 @@ export type SeqNode = Square | Group;
 export interface Track {
   id: string;
   nodes: SeqNode[];
+  sync?: 'slot' | 'loop'; // what it shares with the master, tracks[0]; missing = 'slot'
 }
 export type SlotValue = 4 | 8 | 16;
 export interface Song {
@@ -163,6 +166,8 @@ Classic Web Audio lookahead scheduler ("A Tale of Two Clocks").
 - `positionAt(time) = (cursor − (cursorTime − time) / sps) mod length` → used by UI for the playhead.
 - `stop()`: clear timer, `engine.stopAll()`.
 - Semantics consequence: events already scheduled within the lookahead (≤ 100 ms) are not retracted.
+- Several tracks (feature 17): the master and `'slot'` tracks each keep their own cursor; `'loop'` tracks are
+  scheduled inside the master's windows. See `docs/features/17-multi-track.md`.
 
 ### 2.5 Audio engine and sounds
 
@@ -228,5 +233,5 @@ Parallel work: run independent features in separate git worktrees (one agent eac
 
 ## 5. Future (out of scope for v1, keep the door open)
 
-Multi-track (add tracks to `Song.tracks`, one Strip per track, shared transport) · group span > 1 ·
+Per-track volume/mute/solo · group span > 1 ·
 undo/redo (ops are pure → trivial history stack) · per-square volume/pitch · export/import file · share via URL.

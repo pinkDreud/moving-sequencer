@@ -1,6 +1,6 @@
 # 17 — Multiple tracks
 
-Status: in progress
+Status: done (on the branch, not merged)
 Branch: feat/17-multi-track (not merged: the user wants to try it before it goes to `main`, which deploys)
 
 ## Behaviour (user request, 2026-09-30)
@@ -36,8 +36,8 @@ All tracks share the seconds per slot of the song.
   slots), so the track is always aligned with the master's loop, also after live edits of either track.
 - A loop-synced track whose master is empty has no loop to fit: it runs free, like a `'slot'` track.
 - A free-running track that starts while others are already running (its first square was added, it was switched
-  from loop to slot sync, the master was refilled) starts at `reference.cursor mod length`, where the reference is
-  the first running free track: it stays on the common slot grid. With no reference it starts at slot 0 at the last
+  from loop to slot sync, the master was refilled) starts at `reference position mod length`, taken in swung slots,
+  where the reference is the first running free track: it stays on the common slot grid. With no reference it starts at slot 0 at the last
   horizon, as the single track always did.
 - `positionAt(time, trackIndex = 0)` gives the position in that track.
 
@@ -59,24 +59,24 @@ button. For a tab other than the master, a row under the tabs holds the `Sync` c
 
 ## Acceptance criteria
 
-- [ ] `parseSong` accepts tracks with `sync` missing, `'slot'` or `'loop'`, keeps a missing one missing, and rejects
+- [x] `parseSong` accepts tracks with `sync` missing, `'slot'` or `'loop'`, keeps a missing one missing, and rejects
       anything else.
-- [ ] Two `'slot'` tracks of 4 and 3 slots: both play every slot at the master's slot duration, each looping at its
+- [x] Two `'slot'` tracks of 4 and 3 slots: both play every slot at the master's slot duration, each looping at its
       own length.
-- [ ] A `'loop'` track of 3 slots over a 4-slot master: its notes land at 0, 4/3 and 8/3 master slots, every loop.
-- [ ] A `'loop'` track stays aligned with the master's loop start after the master or the track changes length
+- [x] A `'loop'` track of 3 slots over a 4-slot master: its notes land at 0, 4/3 and 8/3 master slots, every loop.
+- [x] A `'loop'` track stays aligned with the master's loop start after the master or the track changes length
       mid-play; no note is doubled.
-- [ ] A `'loop'` track over an empty master plays at the slot duration.
-- [ ] A track that gets its first square mid-play starts on the slot grid of the running tracks.
-- [ ] Groups, mute and silent squares work in every track; swing pairs each track's own slots.
-- [ ] `positionAt(time, i)` follows track `i`; the playhead is shown on the active tab's squares.
-- [ ] Tabs: `Master` plus one per track; selecting a tab shows that track and clears the selection; palette taps,
+- [x] A `'loop'` track over an empty master plays at the slot duration.
+- [x] A track that gets its first square mid-play starts on the slot grid of the running tracks.
+- [x] Groups, mute and silent squares work in every track; swing pairs each track's own slots.
+- [x] `positionAt(time, i)` follows track `i`; the playhead is shown on the active tab's squares.
+- [x] Tabs: `Master` plus one per track; selecting a tab shows that track and clears the selection; palette taps,
       selection actions and drags edit the active track only.
-- [ ] `Add track` adds an empty track and switches to it; it is disabled at 8 tracks.
-- [ ] `Remove track` (second press) removes the active non-master track; the master has no remove and no sync.
-- [ ] The sync choice is saved and restored with autosave, like the tracks.
-- [ ] Removing a recording silences its squares in every track.
-- [ ] e2e (`?fake-audio`): a second track's sounds are scheduled together with the master's; with `Same loop`, 3
+- [x] `Add track` adds an empty track and switches to it; it is disabled at 8 tracks.
+- [x] `Remove track` (second press) removes the active non-master track; the master has no remove and no sync.
+- [x] The sync choice is saved and restored with autosave, like the tracks.
+- [x] Removing a recording silences its squares in every track.
+- [x] e2e (`?fake-audio`): a second track's sounds are scheduled together with the master's; with `Same loop`, 3
       slots span the master's loop.
 
 ## Edge cases
@@ -99,3 +99,27 @@ proportional to time on a loop-synced tab · a track with its own BPM or slot va
 `src/state.svelte.ts`, `src/ui/TrackTabs.svelte`, `src/ui/Editor.svelte`, `tests/e2e/tracks.spec.ts`.
 
 ## Notes (added during review/doc step)
+
+- The scheduler keeps one `Voice` (cursor + audio time) per free-running track, by track id, and one `frontier`
+  (the last horizon). `advance` is the single-track loop of 05/13 unchanged; the master reports each window so
+  loop-synced tracks are scheduled in it. Follower windows are `[swung(cursor), swung(end))`: `swung(end)` is
+  recomputed from the same `end` as the next window's start, so consecutive windows share the exact boundary.
+- `app.track` is the active track, which is why `actions.ts`, `dragDrop.ts`, `Strip` and `SelectionBar` needed no
+  change. `activeTrack` is not saved: the app opens on the master.
+- A reviewer subagent fuzzed the scheduler against a ground truth: 3000 random songs (1–4 tracks, nested groups,
+  random sync, swing, tempo, lookahead, tick steps), 2000 with late ticks and 2000 with live edits (sync flips,
+  emptied and refilled tracks, length and swing changes): every leaf exactly once per loop at its time, nothing in
+  the past. Two medium findings, both fixed test-first:
+  - a track joining mid-play with swing copied the reference's unwarped cursor and could sit a fraction of a slot
+    off the grid until Stop (odd lengths); it now joins in swung slots;
+  - an armed `Remove?` stayed armed after leaving the tab and coming back on WebKit, where a clicked button takes
+    no focus and so never blurs; a tab press now disarms it.
+- Known limits (low, accepted):
+  - `parseSong` does not cap the number of tracks: hand-made storage with more than 8 shows them all, Add disabled.
+  - The tabs are plain buttons with `role="tab"`: no arrow-key navigation, no `tabpanel`. Space on a tab toggles
+    play (the transport's convention), so a tab is selected with Enter.
+  - While a sync radio has focus the editing keys (Delete, M, G, I) do nothing, as with the transport's radios.
+  - Tab names are positional: removing Track 2 renames Track 3 to "Track 2".
+  - When the master changes length mid-loop, a loop-synced track is remapped onto the new loop from the cursor: a
+    note of the loop in progress may be skipped or heard again once.
+  - Not yet heard on a real device.

@@ -21,6 +21,7 @@ Each feature has a doc `NN-slug.md` using the template below. Status: `planned` 
 | 14  | [Preparation area](14-prep-area.md)                     | done   |
 | 15  | [Editing keys](15-editing-keys.md)                      | done   |
 | 16  | [At least 8 slots per row](16-eight-per-row.md)         | done   |
+| 17  | [Multiple tracks](17-multi-track.md) (branch, unmerged) | done   |
 
 ## Template
 

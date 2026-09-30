@@ -4,15 +4,14 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 
 ## Current state
 
-- **Phase:** features 00–16 are done and live (709 unit, 215 e2e tests).
-- **Next step:** user feedback on real devices (swing by ear, prep drag on a phone). Open ideas: auto-scroll while
-  dragging on phones, undo/redo, multi-track, branch protection on `main`.
-  `feat/14-prep-area`).
-  for Pages, or Cloudflare/Netlify), multi-track, undo/redo, lasso selection, export/import.
+- **Phase:** features 00–16 are done and live. **17 (multiple tracks) is done on `feat/17-multi-track`, not merged**:
+  the user wants to try it before it reaches `main` (which deploys). 760 unit tests; e2e green on the branch.
+- **Next step:** the user tries the branch (`git switch feat/17-multi-track && npm run dev -- --host`) and decides
+  whether to merge. Then: user feedback on real devices (swing by ear, prep drag on a phone). Open ideas: per-track
+  volume/mute, auto-scroll while dragging on phones, undo/redo, branch protection on `main`.
 - **Real-device checks pending:** how the kit sounds; iOS long-press drag; mic recording over `npm run dev:https`
-  (trim/normalize, speaker vs earpiece after recording on iOS); autosave surviving tab close on iOS; private mode.
-  mic over `dev:https`) and a decision about deployment/multi-track.
-  a real device and try touch drag on iOS.
+  (trim/normalize, speaker vs earpiece after recording on iOS); autosave surviving tab close on iOS; private mode;
+  several tracks by ear (polymeter, 3:4).
 - **Blockers:** none. Live at https://pinkdreud.github.io/moving-sequencer/ (Pages, deployed after green CI on `main`).
 
 ## Documentation index
@@ -26,6 +25,16 @@ Newest entry on top. Keep "Current state" accurate. It's the first thing a new s
 | `README.md`                | user-facing: what it is, how to run                             |
 
 ## Entries
+
+### 2026-09-30 — 17 multiple tracks (on the branch, not merged)
+
+- Tracks play together and are edited one per tab (`app.activeTrack`; `app.track` is the active one). A track other
+  than the master has `sync`: `'slot'` (same slot duration, own loop length) or `'loop'` (fits the master's loop).
+  The user picked "the whole loop" as the meaning of "share the pulsation length".
+- Scheduler: one voice per free-running track; loop-synced tracks are scheduled inside the master's windows.
+- The reviewer fuzzed it (no double or missing notes) and found 2 medium issues, fixed test-first. Details and known
+  limits in `docs/features/17-multi-track.md`.
+- **Do not merge to `main` without the user's go-ahead.**
 
 ### 2026-09-30 — 16 at least 8 slots per row
 
